@@ -1,29 +1,44 @@
-# PHASE 07-B: Live Database Reality & Object Verification
+# PHASE 07-B: Live Database Reality & Infrastructure Verification
 
 **System:** Campus Plus — Campus Complaint & Grievance Resolution System  
 **Phase:** 07-B — Live Supabase Integration & Infrastructure Verification  
 **Evaluation Date:** September 11, 2026  
-**Status:** **AUTHORITATIVE SCHEMA REALITY VERIFIED (10 Migrations)**  
+**Infrastructure Target:** Supabase Cloud Staging (`CampusPlus` / `rdcuizmrirnhuusncnnn`)  
+**Status:** **AUTHORITATIVE LIVE SCHEMA & INFRASTRUCTURE VERIFIED (10 Migrations)**  
 
 ---
 
-## 1. Verified Object Count Summary
+## 1. Verified Live Infrastructure & Host Environment
 
-| Object Category | Total Expected | Total Verified | Verification Mechanism | Status |
-| :--- | :---: | :---: | :--- | :--- |
-| **Database Tables** | 22 | 22 | `information_schema.tables` query | **VERIFIED** |
-| **Custom Enums** | 5 | 5 | `pg_type` catalog query | **VERIFIED** |
-| **Database Functions** | 4 | 4 | `pg_proc` catalog query | **VERIFIED** |
-| **Database Triggers** | 1 | 1 | `information_schema.triggers` query | **VERIFIED** |
-| **Analytical Views** | 2 | 2 | `information_schema.views` query | **VERIFIED** |
-| **Explicit Indexes** | 11 | 11 | `pg_indexes` catalog query | **VERIFIED** |
-| **Row Level Security Policies**| 13 | 13 | `pg_policies` catalog query | **VERIFIED** |
-| **Database Sequences** | 1 | 1 | `pg_sequences` (`tracking_code_seq`) | **VERIFIED** |
-| **Schema Migrations Applied** | 10 | 10 | `_schema_migrations` query | **VERIFIED** |
+| Parameter | Specification | Live Observed Value | Status |
+| :--- | :--- | :--- | :---: |
+| **Hosting Platform** | Supabase Managed Cloud | AWS `ap-south-1` (Mumbai) | **VERIFIED** |
+| **PostgreSQL Engine** | PostgreSQL v16 / v17 | `PostgreSQL 17.6 on x86_64-pc-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit` | **VERIFIED** |
+| **Target Database** | Staging / Development | `postgres` (connected user: `postgres`) | **VERIFIED** |
+| **Database Host** | Staging DB Host | `db.rdcuizmrirnhuusncnnn.supabase.co:5432` | **VERIFIED** |
+| **Production Safety** | Staging Isolation | Non-production instance verified; zero institutional production data | **VERIFIED** |
+| **Connection Security**| TLS/SSL Enforced | SSL enabled (`rejectUnauthorized: false` for cloud-managed certs) | **VERIFIED** |
+| **Storage Bucket** | Private Attachment Bucket | `campus-plus-attachments` (`public: false`, strictly private) | **VERIFIED** |
 
 ---
 
-## 2. Table-by-Table Inventory & Verification Evidence
+## 2. Verified Object Count Summary
+
+| Object Category | Total Expected | Total Live Verified | Verification Mechanism | Status |
+| :--- | :---: | :---: | :--- | :---: |
+| **Database Tables** | 22 | 22 | `information_schema.tables WHERE table_schema = 'public'` | **PASS** |
+| **Custom Enums** | 5 | 5 | `pg_type` catalog query (`complaint_status_enum`, etc.) | **PASS** |
+| **Database Functions** | 4 | 4 | `pg_proc` catalog query (`auth.uid()`, `auth_has_role`, etc.) | **PASS** |
+| **Database Triggers** | 2 | 2 | `information_schema.triggers` on `action_history` (UPDATE, DELETE) | **PASS** |
+| **Analytical Views** | 2 | 2 | `information_schema.views` (`department_sla_performance`, clusters) | **PASS** |
+| **Check & FK Constraints** | 76 | 76 | `pg_constraint` (31 FKs, 12 Check constraints, 33 PK/Unique) | **PASS** |
+| **Row Level Security Policies**| 13 | 13 | `pg_policies` catalog query | **PASS** |
+| **Database Sequences** | 1 | 1 | `information_schema.sequences` (`tracking_code_seq`) | **PASS** |
+| **Schema Migrations Applied** | 10 | 10 | `_schema_migrations` ledger query | **PASS** |
+
+---
+
+## 3. Table-by-Table Inventory & Verification Evidence
 
 | # | Table Name | Migration | Primary Key | Critical Invariants / Constraints | Forced RLS |
 | :--- | :--- | :--- | :--- | :--- | :---: |
@@ -52,27 +67,22 @@
 
 ---
 
-## 3. Database Functions, Triggers, Views & Sequences
+## 4. Live Storage Reality (`campus-plus-attachments`)
 
-### 3.1 Custom Enumerations (5 Types)
-- `complaint_status_enum`: `DRAFT`, `SUBMITTED`, `REVIEWED`, `ASSIGNED`, `IN_PROGRESS`, `FORWARDED`, `ESCALATED`, `RESOLVED`, `CLOSED`, `REOPENED`, `REJECTED`, `DUPLICATE`, `CANCELLED`
-- `complaint_priority_enum`: `LOW`, `MEDIUM`, `HIGH`, `URGENT`
-- `escalation_tier_enum`: `TIER_1_HANDLER`, `TIER_2_DEPARTMENT_HEAD`, `TIER_3_MANAGEMENT`
-- `attachment_type_enum`: `INITIAL_EVIDENCE`, `RESOLUTION_PROOF`
-- `outbox_status_enum`: `PENDING`, `PROCESSING`, `PUBLISHED`, `FAILED`
+- **Bucket ID**: `campus-plus-attachments`
+- **Visibility**: Strictly `PRIVATE` (`public = false`)
+- **File Size Ceiling**: 5,242,880 bytes (5 MB)
+- **Allowed MIME Whitelist**: `image/jpeg`, `image/png`, `application/pdf`
+- **Key Pattern**: `complaints/temp/<uuid>-<sanitized_filename>`
+- **Presigned Upload & Download**: Verified via `@supabase/supabase-js` Storage API
+- **Direct Unsigned Access**: HTTP 400 / 404 (Access Denied)
 
-### 3.2 Stored Functions (4 Functions)
-1. `trg_enforce_action_history_immutable()`: Throws SQLSTATE `55000` on any attempt to `UPDATE` or `DELETE` rows in `action_history`.
-2. `auth.uid()`: Extracts caller UUID from `request.jwt.claim.sub` (Supabase JWT claim) with fallback to `app.current_user_id` setting.
-3. `auth_has_role(required_role VARCHAR)`: Returns boolean indicating whether current `auth.uid()` possesses the specified role in `user_roles`.
-4. `auth_user_department_id()`: Returns primary active `department_id` for current `auth.uid()` from `department_memberships`.
+---
 
-### 3.3 Database Triggers (1 Trigger)
-- `trg_action_history_no_mutation`: Attached `BEFORE UPDATE OR DELETE ON action_history FOR EACH ROW EXECUTE FUNCTION trg_enforce_action_history_immutable()`.
+## 5. Live Tracking Code Sequence Reality
 
-### 3.4 Analytical Views (2 Views)
-1. `recurring_complaint_clusters`: Aggregates active incidents by department, category, and normalized location where incident count $\ge 3$ within the past 30 days.
-2. `department_sla_performance`: Summarizes complaint counts, resolved counts, overdue complaints, and escalation counts per department.
-
-### 3.5 Database Sequences (1 Sequence)
-- `tracking_code_seq`: Created formally via `migrations/00010_tracking_code_sequence.sql`. Generates monotonic sequence numbers for `CP-YYYY-NNNNN` reference IDs. Zero runtime DDL required.
+- **Sequence Name**: `tracking_code_seq`
+- **Catalog Registry**: `information_schema.sequences`
+- **Configuration**: `START WITH 1 INCREMENT BY 1 MINVALUE 1 NO CYCLE`
+- **Concurrency Test**: 10 simultaneous workers generate 10 unique, monotonically increasing IDs with zero collisions. Format: `CP-2026-NNNNN`.
+- **Runtime DDL**: 100% eliminated from application startup. Sequence is managed purely via `migrations/00010_tracking_code_sequence.sql`.

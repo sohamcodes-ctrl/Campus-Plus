@@ -1,6 +1,7 @@
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import { FileMetadata, StoragePort, UploadPresignedUrlResult } from "@/application/ports/ExternalPorts";
 import crypto from "node:crypto";
+import path from "node:path";
 
 const ALLOWED_MIME_TYPES = new Set(["image/jpeg", "image/png", "application/pdf"]);
 const MAX_FILE_SIZE_BYTES = 5242880; // 5 MB strictly enforced
@@ -51,7 +52,10 @@ export class SupabaseStorageAdapter implements StoragePort {
     }
 
     // 3. Sanitized path traversal-resistant file key
-    const sanitizedFilename = metadata.filename.replace(/[^a-zA-Z0-9._-]/g, "_").slice(0, 100);
+    const base = path.posix.basename(metadata.filename.replace(/\\/g, "/"));
+    const ext = path.posix.extname(base).toLowerCase();
+    const nameOnly = path.posix.basename(base, ext).replace(/[^a-zA-Z0-9_-]/g, "_");
+    const sanitizedFilename = `${nameOnly || "file"}${ext}`.slice(0, 100);
     const fileUuid = crypto.randomUUID();
     const fileKey = `complaints/temp/${fileUuid}-${sanitizedFilename}`;
 

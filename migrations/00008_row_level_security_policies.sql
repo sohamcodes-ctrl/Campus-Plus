@@ -3,20 +3,35 @@
 -- ==============================================================================
 
 -- 1. Portability Shim: Ensure auth.uid() function exists
-CREATE SCHEMA IF NOT EXISTS auth;
-
-CREATE OR REPLACE FUNCTION auth.uid()
-RETURNS UUID AS $$
+DO $$
 BEGIN
-    -- Fallback to app.current_user_id setting if Supabase JWT claim is absent (for testing/local execution)
-    RETURN COALESCE(
-        NULLIF(current_setting('request.jwt.claim.sub', true), '')::UUID,
-        NULLIF(current_setting('app.current_user_id', true), '')::UUID
-    );
-EXCEPTION WHEN OTHERS THEN
-    RETURN NULL;
+    IF NOT EXISTS (SELECT 1 FROM pg_namespace WHERE nspname = 'auth') THEN
+        CREATE SCHEMA auth;
+    END IF;
+
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_proc p 
+        JOIN pg_namespace n ON p.pronamespace = n.oid 
+        WHERE n.nspname = 'auth' AND p.proname = 'uid'
+    ) THEN
+        EXECUTE $fn$
+            CREATE FUNCTION auth.uid()
+            RETURNS UUID AS $f$
+            BEGIN
+                RETURN COALESCE(
+                    NULLIF(current_setting('request.jwt.claim.sub', true), '')::UUID,
+                    NULLIF(current_setting('app.current_user_id', true), '')::UUID
+                );
+            EXCEPTION WHEN OTHERS THEN
+                RETURN NULL;
+            END;
+            $f$ LANGUAGE plpgsql STABLE;
+        $fn$;
+    END IF;
+EXCEPTION WHEN insufficient_privilege THEN
+    NULL;
 END;
-$$ LANGUAGE plpgsql STABLE;
+$$;
 
 -- 2. Security Helper Functions
 CREATE OR REPLACE FUNCTION auth_has_role(required_role VARCHAR)

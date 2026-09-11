@@ -11,11 +11,6 @@ export class PostgresTrackingCodeGenerator implements ITrackingCodeGeneratorPort
   constructor(private readonly db: DatabaseQueryInterface) {}
 
   public async generate(): Promise<TrackingCode> {
-    // Ensure sequence exists if not already created
-    await this.db.query(`
-      CREATE SEQUENCE IF NOT EXISTS tracking_code_seq START WITH 1 INCREMENT BY 1;
-    `);
-
     const result = await this.db.query<{ seq: string | number }>(
       "SELECT nextval('tracking_code_seq') AS seq;"
     );

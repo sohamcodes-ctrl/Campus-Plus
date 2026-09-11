@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { AuthProvider } from "@/presentation/context/AuthContext";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -6,10 +7,16 @@ export const metadata: Metadata = {
   description: "Enterprise grievance resolution platform for academic institutions",
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body className="min-h-screen bg-slate-50 text-slate-900 antialiased selection:bg-blue-100 selection:text-blue-900">
+        <AuthProvider>{children}</AuthProvider>
+      </body>
     </html>
   );
 }

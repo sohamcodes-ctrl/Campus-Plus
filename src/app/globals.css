@@ -1,1 +1,150 @@
 @import "tailwindcss";
+
+@theme {
+  /* Student Persona (ROLE_STUDENT / ROLE_FACULTY) */
+  --color-student-primary: #7FA8D9;
+  --color-student-secondary: #B8D0EC;
+  --color-student-accent: #EAF2FB;
+  --color-student-surface: #FAFCFE;
+  --color-student-text: #33475B;
+  --color-student-btn-text: #1E3A5F;
+
+  /* Handler Persona (ROLE_HANDLER) */
+  --color-handler-primary: #7FC4B2;
+  --color-handler-secondary: #B7E0D3;
+  --color-handler-accent: #E9F6F1;
+  --color-handler-surface: #FAFDFC;
+  --color-handler-text: #2E4A42;
+  --color-handler-btn-text: #1A3830;
+
+  /* Department Head Persona (ROLE_DEPT_HEAD) */
+  --color-hod-primary: #B39DDB;
+  --color-hod-secondary: #D6C6EC;
+  --color-hod-accent: #F3EDFA;
+  --color-hod-surface: #FCFAFE;
+  --color-hod-text: #43395A;
+  --color-hod-btn-text: #2B1E40;
+
+  /* Director / Senior Authority Persona (ROLE_ADMIN) */
+  --color-admin-primary: #9FB4C7;
+  --color-admin-secondary: #C7D5E0;
+  --color-admin-accent: #EEF3F7;
+  --color-admin-surface: #FBFCFD;
+  --color-admin-text: #37495A;
+  --color-admin-btn-text: #1C2B38;
+
+  /* College Body / Management Persona (ROLE_MANAGEMENT) */
+  --color-management-primary: #E3A6AE;
+  --color-management-secondary: #F0C9CE;
+  --color-management-accent: #FBEDEF;
+  --color-management-surface: #FEFAFA;
+  --color-management-text: #5C333A;
+  --color-management-btn-text: #3D1C22;
+
+  /* Neutral surfaces and backgrounds */
+  --color-surface: #FFFFFF;
+  --color-surface-subtle: #F8FAFC;
+  --color-surface-hover: #F1F5F9;
+  --color-surface-active: #E2E8F0;
+  --color-surface-disabled: #F1F5F9;
+
+  /* Typography color scale */
+  --color-text-primary: #0F172A;
+  --color-text-secondary: #334155;
+  --color-text-muted: #64748B;
+  --color-text-disabled: #94A3B8;
+
+  /* Border color scale */
+  --color-border: #E2E8F0;
+  --color-border-subtle: #F1F5F9;
+  --color-border-strong: #CBD5E1;
+
+  /* 13 Semantic FSM Status Tokens */
+  --color-status-draft-bg: #F1F5F9;
+  --color-status-draft-border: #CBD5E1;
+  --color-status-draft-text: #475569;
+
+  --color-status-submitted-bg: #EFF6FF;
+  --color-status-submitted-border: #BFDBFE;
+  --color-status-submitted-text: #1E40AF;
+
+  --color-status-reviewed-bg: #EEF2FF;
+  --color-status-reviewed-border: #C7D2FE;
+  --color-status-reviewed-text: #3730A3;
+
+  --color-status-assigned-bg: #F0FDFA;
+  --color-status-assigned-border: #99F6E4;
+  --color-status-assigned-text: #115E59;
+
+  --color-status-inprogress-bg: #ECFDF5;
+  --color-status-inprogress-border: #A7F3D0;
+  --color-status-inprogress-text: #065F46;
+
+  --color-status-forwarded-bg: #FFFBEB;
+  --color-status-forwarded-border: #FDE68A;
+  --color-status-forwarded-text: #92400E;
+
+  --color-status-escalated-bg: #FFF1F2;
+  --color-status-escalated-border: #FECDD3;
+  --color-status-escalated-text: #9F1239;
+
+  --color-status-resolved-bg: #F0FDF4;
+  --color-status-resolved-border: #BBF7D0;
+  --color-status-resolved-text: #166534;
+
+  --color-status-closed-bg: #F8FAFC;
+  --color-status-closed-border: #E2E8F0;
+  --color-status-closed-text: #475569;
+
+  --color-status-reopened-bg: #FFFBEB;
+  --color-status-reopened-border: #FCD34D;
+  --color-status-reopened-text: #78350F;
+
+  --color-status-rejected-bg: #FEF2F2;
+  --color-status-rejected-border: #FECACA;
+  --color-status-rejected-text: #991B1B;
+
+  --color-status-duplicate-bg: #F8FAFC;
+  --color-status-duplicate-border: #E2E8F0;
+  --color-status-duplicate-text: #64748B;
+
+  --color-status-cancelled-bg: #F8FAFC;
+  --color-status-cancelled-border: #E2E8F0;
+  --color-status-cancelled-text: #64748B;
+}
+
+:root {
+  /* Default active role variables (Student persona default) */
+  --role-primary: #7FA8D9;
+  --role-secondary: #B8D0EC;
+  --role-accent: #EAF2FB;
+  --role-surface: #FAFCFE;
+  --role-text: #33475B;
+  --role-btn-text: #1E3A5F;
+}
+
+/* System-wide clean typography and base layout */
+html, body {
+  background-color: var(--color-surface-subtle);
+  color: var(--color-text-primary);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Monospace font class for tracking codes */
+.font-tracking {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+}
+
+/* WCAG 2.1 AA Reduced Motion Support */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

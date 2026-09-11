@@ -216,7 +216,7 @@ describe("Phase 07-B — Live Supabase Infrastructure & Security Architecture Su
       });
 
       expect(res.uploadUrl).toBeDefined();
-      expect(createdPath).toMatch(/^complaints\/temp\/[0-9a-f-]{36}-\.\._\.\._etc_passwd\.pdf$/);
+      expect(createdPath).toMatch(/^complaints\/temp\/[0-9a-f-]{36}-passwd\.pdf$/);
       expect(createdPath).not.toContain("../");
     });
   });
