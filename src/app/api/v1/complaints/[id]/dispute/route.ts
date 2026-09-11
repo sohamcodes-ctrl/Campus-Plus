@@ -1,0 +1,36 @@
+import { NextRequest } from "next/server";
+import { getContainer } from "@/infrastructure/container";
+import { DisputeReopenSchema } from "@/presentation/schemas/complaintSchemas";
+import { createSuccessResponse } from "@/presentation/utils/apiResponse";
+import { handleApiError } from "@/presentation/utils/errorHandler";
+
+export const dynamic = "force-dynamic";
+
+export async function POST(
+  request: NextRequest,
+  context: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await context.params;
+    const container = await getContainer();
+    const actor = await container.authAdapter.authenticate(request);
+
+    const body = await request.json();
+    const validated = DisputeReopenSchema.parse(body);
+
+    const result = await container.reopenComplaintUseCase.execute({
+      complaintId: id,
+      actor,
+      disputeReason: validated.disputeReason,
+      expectedVersion: validated.expectedVersion,
+    });
+
+    if (result.isFailure) {
+      return handleApiError(result.error);
+    }
+
+    return createSuccessResponse({ message: "Complaint disputed and reopened successfully" });
+  } catch (error) {
+    return handleApiError(error);
+  }
+}

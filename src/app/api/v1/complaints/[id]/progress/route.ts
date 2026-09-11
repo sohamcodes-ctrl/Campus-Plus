@@ -1,0 +1,35 @@
+import { NextRequest } from "next/server";
+import { getContainer } from "@/infrastructure/container";
+import { StartProgressSchema } from "@/presentation/schemas/complaintSchemas";
+import { createSuccessResponse } from "@/presentation/utils/apiResponse";
+import { handleApiError } from "@/presentation/utils/errorHandler";
+
+export const dynamic = "force-dynamic";
+
+export async function POST(
+  request: NextRequest,
+  context: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await context.params;
+    const container = await getContainer();
+    const actor = await container.authAdapter.authenticate(request);
+
+    const body = await request.json().catch(() => ({}));
+    const validated = StartProgressSchema.parse(body);
+
+    const result = await container.startProgressUseCase.execute({
+      complaintId: id,
+      actor,
+      expectedVersion: validated.expectedVersion,
+    });
+
+    if (result.isFailure) {
+      return handleApiError(result.error);
+    }
+
+    return createSuccessResponse({ message: "Complaint moved to IN_PROGRESS successfully" });
+  } catch (error) {
+    return handleApiError(error);
+  }
+}

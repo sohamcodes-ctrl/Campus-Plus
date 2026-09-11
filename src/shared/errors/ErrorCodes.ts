@@ -1,0 +1,24 @@
+/**
+ * Standardized Machine-Readable Error Codes for Campus Plus
+ * Used across Domain, Application, and Presentation layers.
+ */
+export const ErrorCodes = {
+  // Client Errors (4xx)
+  BAD_REQUEST: "BAD_REQUEST",
+  VALIDATION_FAILED: "VALIDATION_FAILED",
+  UNAUTHENTICATED: "UNAUTHENTICATED",
+  FORBIDDEN: "FORBIDDEN",
+  NOT_FOUND: "NOT_FOUND",
+  CONFLICT: "CONFLICT",
+  STATE_TRANSITION_INVALID: "STATE_TRANSITION_INVALID",
+  PRECONDITION_FAILED: "PRECONDITION_FAILED",
+  RATE_LIMIT_EXCEEDED: "RATE_LIMIT_EXCEEDED",
+
+  // Server Errors (5xx)
+  INTERNAL_ERROR: "INTERNAL_ERROR",
+  DATABASE_ERROR: "DATABASE_ERROR",
+  EXTERNAL_SERVICE_ERROR: "EXTERNAL_SERVICE_ERROR",
+  SERVICE_UNAVAILABLE: "SERVICE_UNAVAILABLE",
+} as const;
+
+export type ErrorCode = (typeof ErrorCodes)[keyof typeof ErrorCodes];
