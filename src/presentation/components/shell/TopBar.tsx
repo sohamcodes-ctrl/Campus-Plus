@@ -110,6 +110,9 @@ export const TopBar: React.FC = () => {
                   onClick={async () => {
                     setIsUserMenuOpen(false);
                     await signOut();
+                    if (typeof window !== "undefined") {
+                      window.location.replace("/");
+                    }
                   }}
                   className="w-full text-left px-4 py-2 text-red-600 hover:bg-red-50 font-medium transition-colors cursor-pointer"
                 >

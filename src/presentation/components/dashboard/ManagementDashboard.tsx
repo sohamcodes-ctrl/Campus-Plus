@@ -10,6 +10,7 @@ import { AlertBanner } from "@/presentation/components/feedback/AlertBanner";
 import { TrackingCodeBadge } from "@/presentation/components/domain/TrackingCodeBadge";
 import { StatusPill } from "@/presentation/components/domain/StatusPill";
 import { PriorityBadge } from "@/presentation/components/domain/PriorityBadge";
+import { Button } from "@/presentation/components/primitives/Button";
 
 export function ManagementDashboard() {
   const [complaints, setComplaints] = useState<ComplaintDTO[]>([]);
@@ -87,8 +88,8 @@ export function ManagementDashboard() {
 
         <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs space-y-1">
           <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Governance Audit</span>
-          <p className="text-2xl font-extrabold text-slate-700">100%</p>
-          <span className="text-[11px] text-slate-400">Immutable ledger</span>
+          <p className="text-sm font-semibold text-slate-500 pt-1">Audit metrics unavailable</p>
+          <span className="text-[11px] text-slate-400">Backend telemetry pending</span>
         </div>
       </div>
 
@@ -100,66 +101,93 @@ export function ManagementDashboard() {
         {isLoading && (
           <div className="space-y-3 pt-2">
             <Skeleton variant="text" />
-            <Skeleton variant="text" width="70%" />
+            <Skeleton variant="text" width="80%" />
           </div>
         )}
 
         {!isLoading && fetchError && (
-          <AlertBanner variant="error" title="Data Load Error">
+          <AlertBanner variant="error" title="Error Loading Executive Queue">
             {fetchError}
           </AlertBanner>
         )}
 
         {!isLoading && !fetchError && criticalUrgent.length === 0 && (
-          <div className="text-center py-10 text-xs text-slate-500">
-            No active escalations or urgent bottlenecks across campus departments.
+          <div className="text-center py-12 text-xs text-slate-500">
+            Zero active escalations or urgent alerts requiring executive intervention.
           </div>
         )}
 
         {!isLoading && !fetchError && criticalUrgent.length > 0 && (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs border-collapse" aria-label="Executive Queue">
-              <thead>
-                <tr className="border-b border-slate-200 text-slate-500 uppercase tracking-wider">
-                  <th className="py-2.5 px-3 font-semibold">Reference</th>
-                  <th className="py-2.5 px-3 font-semibold">Subject</th>
-                  <th className="py-2.5 px-3 font-semibold">Priority</th>
-                  <th className="py-2.5 px-3 font-semibold">Status</th>
-                  <th className="py-2.5 px-3 font-semibold">Date</th>
-                  <th className="py-2.5 px-3 font-semibold text-right">Inspect</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {criticalUrgent.map((c) => (
-                  <tr key={c.id} className="hover:bg-slate-50/80 transition-colors">
-                    <td className="py-2.5 px-3 whitespace-nowrap">
-                      <TrackingCodeBadge trackingCode={c.trackingCode} size="sm" />
-                    </td>
-                    <td className="py-2.5 px-3 font-medium text-slate-900 max-w-xs truncate">
-                      {c.title}
-                    </td>
-                    <td className="py-2.5 px-3 whitespace-nowrap">
-                      <PriorityBadge priority={c.suggestedPriority} size="sm" />
-                    </td>
-                    <td className="py-2.5 px-3 whitespace-nowrap">
-                      <StatusPill status={c.status} size="sm" />
-                    </td>
-                    <td className="py-2.5 px-3 whitespace-nowrap text-slate-500">
-                      {new Date(c.createdAt).toLocaleDateString()}
-                    </td>
-                    <td className="py-2.5 px-3 whitespace-nowrap text-right">
-                      <Link
-                        href={`/complaints/${c.id}`}
-                        className="text-[var(--role-btn-text,#3D1C22)] font-semibold hover:underline"
-                      >
-                        Inspect &rarr;
-                      </Link>
-                    </td>
+          <>
+            {/* Desktop Table View */}
+            <div className="hidden md:block overflow-x-auto">
+              <table className="w-full text-left text-xs border-collapse" aria-label="Executive Attention Queue">
+                <thead>
+                  <tr className="border-b border-slate-200 text-slate-500 uppercase tracking-wider">
+                    <th className="py-2.5 px-3 font-semibold">Reference</th>
+                    <th className="py-2.5 px-3 font-semibold">Title</th>
+                    <th className="py-2.5 px-3 font-semibold">Priority</th>
+                    <th className="py-2.5 px-3 font-semibold">Status</th>
+                    <th className="py-2.5 px-3 font-semibold">Date</th>
+                    <th className="py-2.5 px-3 font-semibold text-right">Inspect</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {criticalUrgent.map((c) => (
+                    <tr key={c.id} className="hover:bg-slate-50/80 transition-colors">
+                      <td className="py-2.5 px-3 whitespace-nowrap">
+                        <TrackingCodeBadge trackingCode={c.trackingCode} size="sm" />
+                      </td>
+                      <td className="py-2.5 px-3 font-medium text-slate-900 max-w-xs truncate">
+                        {c.title}
+                      </td>
+                      <td className="py-2.5 px-3 whitespace-nowrap">
+                        <PriorityBadge priority={c.suggestedPriority} size="sm" />
+                      </td>
+                      <td className="py-2.5 px-3 whitespace-nowrap">
+                        <StatusPill status={c.status} size="sm" />
+                      </td>
+                      <td className="py-2.5 px-3 whitespace-nowrap text-slate-500">
+                        {new Date(c.createdAt).toLocaleDateString()}
+                      </td>
+                      <td className="py-2.5 px-3 whitespace-nowrap text-right">
+                        <Link
+                          href={`/complaints/${c.id}`}
+                          className="text-[var(--role-btn-text,#3D1C22)] font-semibold hover:underline"
+                        >
+                          Inspect &rarr;
+                        </Link>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Mobile Card List View */}
+            <div className="md:hidden space-y-3 pt-2">
+              {criticalUrgent.map((c) => (
+                <div key={c.id} className="p-4 rounded-xl border border-slate-200 bg-white space-y-2.5 shadow-xs">
+                  <div className="flex items-center justify-between gap-2">
+                    <TrackingCodeBadge trackingCode={c.trackingCode} size="sm" />
+                    <StatusPill status={c.status} size="sm" />
+                  </div>
+                  <h4 className="font-semibold text-xs text-slate-900 line-clamp-2">
+                    {c.title}
+                  </h4>
+                  <div className="flex items-center justify-between text-[11px] text-slate-500 pt-1 border-t border-slate-100">
+                    <PriorityBadge priority={c.suggestedPriority} size="sm" />
+                    <span>{new Date(c.createdAt).toLocaleDateString()}</span>
+                  </div>
+                  <Link href={`/complaints/${c.id}`} className="block pt-1">
+                    <Button variant="outline" size="sm" className="w-full text-xs">
+                      Inspect Details &rarr;
+                    </Button>
+                  </Link>
+                </div>
+              ))}
+            </div>
+          </>
         )}
       </Card>
 

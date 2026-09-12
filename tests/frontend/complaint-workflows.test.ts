@@ -54,13 +54,14 @@ describe("Phase 08-C: Complaint Workflows, Submission & OCC Suite", () => {
   // 1. COMPLAINT DIRECTORY & SEARCH LIST
   // ==========================================================================
   describe("1. Complaints Directory (/complaints)", () => {
-    it("renders search input, status filter, and priority filter", () => {
+    it("renders search input, status filter, priority filter, and category filter", () => {
       const html = renderToStaticMarkup(React.createElement(ComplaintsPage));
 
-      expect(html).toContain("Grievance Directory &amp; Records");
+      expect(html).toContain("My Complaints Ledger");
       expect(html).toContain("Search by reference code or title");
       expect(html).toContain("Filter by Status");
       expect(html).toContain("Filter by Priority");
+      expect(html).toContain("Filter by Category");
     });
   });
 

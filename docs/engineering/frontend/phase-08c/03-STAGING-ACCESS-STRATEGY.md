@@ -27,12 +27,12 @@ Rather than weakening application security or implementing client-side role mock
 | `ROLE_MANAGEMENT` | `management@synthetic.campusplus.internal` | `00000000-0000-0000-0000-000000001006` | Campus-Wide Executive |
 | `ROLE_ADMIN` | `sysadmin@synthetic.campusplus.internal` | `00000000-0000-0000-0000-000000001007` | Technical System Admin |
 
-**Standard Staging Password:** `CampusPlus2026!`
+**Credential Management:** Managed strictly via server-side environment variable `STAGING_USER_PASSWORD` during administrative provisioning; never committed or exposed to client bundles.
 
 ---
 
 ## 3. Security Safeguards
 
-- **Zero Markup Leaks:** Credentials are never printed in the HTML markup; clicking a button invokes React state setters.
-- **Production Guard:** `StagingAccountHelper` returns `null` when `process.env.NODE_ENV === "production"` unless explicitly overridden by `NEXT_PUBLIC_ENABLE_STAGING_PRESETS="true"`.
-- **Full Backend Enforcement:** All queries and mutations performed under these sessions pass through Supabase RLS and `AuthorizationPolicy.ts`.\n
+- **Zero Client Credentials:** Zero passwords in client source, React components, HTML, localStorage, or production bundles.
+- **Authentic Supabase Auth Flow:** All logins execute authentic cryptographic round-trips against Supabase Auth endpoints.
+- **Full Backend Enforcement:** All queries and mutations performed under these sessions pass through Supabase RLS and `AuthorizationPolicy.ts`.

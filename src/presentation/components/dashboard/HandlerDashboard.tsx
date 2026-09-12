@@ -11,6 +11,7 @@ import { AlertBanner } from "@/presentation/components/feedback/AlertBanner";
 import { TrackingCodeBadge } from "@/presentation/components/domain/TrackingCodeBadge";
 import { StatusPill } from "@/presentation/components/domain/StatusPill";
 import { PriorityBadge } from "@/presentation/components/domain/PriorityBadge";
+import { Button } from "@/presentation/components/primitives/Button";
 
 export function HandlerDashboard() {
   const { actor } = useAuth();
@@ -150,49 +151,76 @@ export function HandlerDashboard() {
         )}
 
         {!isLoading && !fetchError && displayList.length > 0 && (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs border-collapse" aria-label="Handler Worklist">
-              <thead>
-                <tr className="border-b border-slate-200 text-slate-500 uppercase tracking-wider">
-                  <th className="py-2.5 px-3 font-semibold">Reference</th>
-                  <th className="py-2.5 px-3 font-semibold">Title</th>
-                  <th className="py-2.5 px-3 font-semibold">Priority</th>
-                  <th className="py-2.5 px-3 font-semibold">Status</th>
-                  <th className="py-2.5 px-3 font-semibold">Date</th>
-                  <th className="py-2.5 px-3 font-semibold text-right">Action</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {displayList.map((c) => (
-                  <tr key={c.id} className="hover:bg-slate-50/80 transition-colors">
-                    <td className="py-2.5 px-3 whitespace-nowrap">
-                      <TrackingCodeBadge trackingCode={c.trackingCode} size="sm" />
-                    </td>
-                    <td className="py-2.5 px-3 font-medium text-slate-900 max-w-xs truncate">
-                      {c.title}
-                    </td>
-                    <td className="py-2.5 px-3 whitespace-nowrap">
-                      <PriorityBadge priority={c.suggestedPriority} size="sm" />
-                    </td>
-                    <td className="py-2.5 px-3 whitespace-nowrap">
-                      <StatusPill status={c.status} size="sm" />
-                    </td>
-                    <td className="py-2.5 px-3 whitespace-nowrap text-slate-500">
-                      {new Date(c.createdAt).toLocaleDateString()}
-                    </td>
-                    <td className="py-2.5 px-3 whitespace-nowrap text-right">
-                      <Link
-                        href={`/complaints/${c.id}`}
-                        className="text-[var(--role-btn-text,#1A3830)] font-semibold hover:underline"
-                      >
-                        Manage &rarr;
-                      </Link>
-                    </td>
+          <>
+            {/* Desktop Table View */}
+            <div className="hidden md:block overflow-x-auto">
+              <table className="w-full text-left text-xs border-collapse" aria-label="Handler Worklist">
+                <thead>
+                  <tr className="border-b border-slate-200 text-slate-500 uppercase tracking-wider">
+                    <th className="py-2.5 px-3 font-semibold">Reference</th>
+                    <th className="py-2.5 px-3 font-semibold">Title</th>
+                    <th className="py-2.5 px-3 font-semibold">Priority</th>
+                    <th className="py-2.5 px-3 font-semibold">Status</th>
+                    <th className="py-2.5 px-3 font-semibold">Date</th>
+                    <th className="py-2.5 px-3 font-semibold text-right">Action</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {displayList.map((c) => (
+                    <tr key={c.id} className="hover:bg-slate-50/80 transition-colors">
+                      <td className="py-2.5 px-3 whitespace-nowrap">
+                        <TrackingCodeBadge trackingCode={c.trackingCode} size="sm" />
+                      </td>
+                      <td className="py-2.5 px-3 font-medium text-slate-900 max-w-xs truncate">
+                        {c.title}
+                      </td>
+                      <td className="py-2.5 px-3 whitespace-nowrap">
+                        <PriorityBadge priority={c.suggestedPriority} size="sm" />
+                      </td>
+                      <td className="py-2.5 px-3 whitespace-nowrap">
+                        <StatusPill status={c.status} size="sm" />
+                      </td>
+                      <td className="py-2.5 px-3 whitespace-nowrap text-slate-500">
+                        {new Date(c.createdAt).toLocaleDateString()}
+                      </td>
+                      <td className="py-2.5 px-3 whitespace-nowrap text-right">
+                        <Link
+                          href={`/complaints/${c.id}`}
+                          className="text-[var(--role-btn-text,#1A3830)] font-semibold hover:underline"
+                        >
+                          Manage &rarr;
+                        </Link>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Mobile Card List View */}
+            <div className="md:hidden space-y-3 pt-2">
+              {displayList.map((c) => (
+                <div key={c.id} className="p-4 rounded-xl border border-slate-200 bg-white space-y-2.5 shadow-xs">
+                  <div className="flex items-center justify-between gap-2">
+                    <TrackingCodeBadge trackingCode={c.trackingCode} size="sm" />
+                    <StatusPill status={c.status} size="sm" />
+                  </div>
+                  <h4 className="font-semibold text-xs text-slate-900 line-clamp-2">
+                    {c.title}
+                  </h4>
+                  <div className="flex items-center justify-between text-[11px] text-slate-500 pt-1 border-t border-slate-100">
+                    <PriorityBadge priority={c.suggestedPriority} size="sm" />
+                    <span>{new Date(c.createdAt).toLocaleDateString()}</span>
+                  </div>
+                  <Link href={`/complaints/${c.id}`} className="block pt-1">
+                    <Button variant="outline" size="sm" className="w-full text-xs">
+                      Manage Complaint &rarr;
+                    </Button>
+                  </Link>
+                </div>
+              ))}
+            </div>
+          </>
         )}
       </Card>
     </div>

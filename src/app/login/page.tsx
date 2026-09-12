@@ -1,12 +1,12 @@
 "use client";
 
 import React, { useState, useEffect, Suspense } from "react";
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/presentation/context/AuthContext";
 import { TextInput } from "@/presentation/components/forms/TextInput";
 import { Button } from "@/presentation/components/primitives/Button";
 import { AlertBanner } from "@/presentation/components/feedback/AlertBanner";
-import { StagingAccountHelper } from "@/presentation/components/auth/StagingAccountHelper";
 import { sanitizeRedirect } from "@/presentation/utils/security";
 
 /**
@@ -82,12 +82,6 @@ export function LoginForm() {
     }
   };
 
-  const handleSelectStagingPersona = (stagingEmail: string, stagingPass: string) => {
-    setEmail(stagingEmail);
-    setPassword(stagingPass);
-    setFormError(null);
-  };
-
   const displayError = formError || (authError ? mapAuthErrorMessage(new Error(authError)) : null);
 
   return (
@@ -110,9 +104,19 @@ export function LoginForm() {
               </span>
             </div>
           </div>
-          <div className="flex items-center space-x-2 text-xs text-slate-500">
-            <span className="inline-block h-2 w-2 rounded-full bg-emerald-500" aria-hidden="true"></span>
-            <span className="hidden sm:inline">System Operational</span>
+          <div className="flex items-center space-x-3 text-xs">
+            <Link href="/" className="text-slate-500 hover:text-slate-800 transition-colors">
+              &larr; Home
+            </Link>
+            <span className="text-slate-300">|</span>
+            <Link href="/register" className="font-semibold text-[#1E3A5F] hover:underline">
+              Create Account
+            </Link>
+            <span className="hidden sm:inline text-slate-300">|</span>
+            <div className="hidden sm:flex items-center space-x-1.5 text-slate-500">
+              <span className="inline-block h-2 w-2 rounded-full bg-emerald-500" aria-hidden="true"></span>
+              <span>System Operational</span>
+            </div>
           </div>
         </div>
       </header>
@@ -125,7 +129,7 @@ export function LoginForm() {
           <div className="lg:col-span-6 space-y-6 text-slate-900">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium bg-[var(--role-accent,#EAF2FB)] text-[var(--role-btn-text,#1E3A5F)] border border-[var(--role-secondary,#B8D0EC)]">
               <span className="h-1.5 w-1.5 rounded-full bg-[var(--role-primary,#7FA8D9)]" aria-hidden="true"></span>
-              Institutional Governance Architecture
+              Campus Grievance Portal
             </div>
 
             <div className="space-y-3">
@@ -247,7 +251,7 @@ export function LoginForm() {
                   </div>
                 </div>
 
-                <div className="pt-2">
+                <div className="pt-2 space-y-3">
                   <Button
                     type="submit"
                     variant="primary"
@@ -258,14 +262,17 @@ export function LoginForm() {
                   >
                     Sign In to Campus Plus
                   </Button>
+                  <div className="text-center pt-1">
+                    <span className="text-xs text-slate-500">New to Campus Plus? </span>
+                    <Link
+                      href="/register"
+                      className="text-xs font-semibold text-[#1E3A5F] hover:underline"
+                    >
+                      Create an account &rarr;
+                    </Link>
+                  </div>
                 </div>
               </form>
-
-              {/* Staging Demonstration Account Selector (Dev / Staging Only) */}
-              <StagingAccountHelper
-                onSelectPersona={handleSelectStagingPersona}
-                disabled={isSubmitting}
-              />
 
               {/* Help & IT Support Footer */}
               <div className="pt-4 border-t border-slate-100 text-center space-y-2">
@@ -283,7 +290,7 @@ export function LoginForm() {
         </div>
       </main>
 
-      {/* Institutional Legal & Audit Sub-Footer */}
+      {/* Institutional Sub-Footer */}
       <footer className="w-full border-t border-slate-200/80 bg-white/70 py-4 px-4 sm:px-6 lg:px-8 text-center text-xs text-slate-400">
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2">
           <span>Campus Plus — Campus Complaint &amp; Grievance Resolution System</span>

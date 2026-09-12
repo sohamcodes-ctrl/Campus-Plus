@@ -8,18 +8,32 @@ import { ShellError } from "@/presentation/components/shell/ShellError";
 import { ForbiddenState } from "@/presentation/components/shell/ForbiddenState";
 import { AppShell } from "@/presentation/components/shell/AppShell";
 
+// Modular Landing Components matching Authoritative Reference Specification
+import { LandingHeader } from "@/presentation/components/landing/LandingHeader";
+import { HeroSection } from "@/presentation/components/landing/HeroSection";
+import { MetricsBar } from "@/presentation/components/landing/MetricsBar";
+import { HowItWorks } from "@/presentation/components/landing/HowItWorks";
+import { RoleEcosystem } from "@/presentation/components/landing/RoleEcosystem";
+import { LandingFooter } from "@/presentation/components/landing/LandingFooter";
+
 /**
- * Root Application Entry Point ("/")
+ * Root Application Public Landing Page ("/")
  *
- * Resolves application entry authoritatively based on the 9-state authentication FSM:
- * - Authenticated -> Replaces route with /dashboard
- * - Unauthenticated -> Replaces route with /login
- * - In-flight / Loading -> Displays accessible ShellLoading
- * - Identity Forbidden -> Displays ForbiddenState inside AppShell
- * - Verification Error -> Displays ShellError with retry action
+ * Faithfully reproduces the authoritative visual reference specification:
+ * - Institutional Header (Brand shield, wordmark, tagline, navigation, CTAs)
+ * - Hero Section (Two-line bold headline, supporting text, dual CTAs, institutional building visual)
+ * - Trust Strip (4 items: Secure Access, Real-time Tracking, Transparency, Accountability)
+ * - Metrics Bar (Floating white card: 2,482 Registered, 1,842 Resolved, 98% In Time, 100% Confidentiality)
+ * - How It Works (5 horizontal process steps with circular icons and connecting arrows)
+ * - Who Can Use Campus Plus (6 role cards: Students, Handlers, HODs, Directors, Management, Admins)
+ * - Institutional Footer (Deep navy background, support email, emergency instructions, copyright)
  *
- * Replaces the legacy prototype scaffold.
- * Zero exposure of internal diagnostics, phase labels, or mock data.
+ * Preserves all functional authentication behaviors:
+ * - Unauthenticated visitors view the public institutional landing page with links to href="/login" and href="/register".
+ * - Authenticated users automatically redirect to /dashboard via router.replace("/dashboard").
+ * - In-flight loading / session initialization displays accessible ShellLoading.
+ * - Forbidden identity renders ForbiddenState inside AppShell.
+ * - Identity verification failures render ShellError with retry action.
  */
 export default function RootPage() {
   const router = useRouter();
@@ -28,20 +42,17 @@ export default function RootPage() {
   useEffect(() => {
     if (authState === "AUTHENTICATED") {
       router.replace("/dashboard");
-    } else if (authState === "UNAUTHENTICATED") {
-      router.replace("/login");
     }
   }, [authState, router]);
 
-  // Loading, initializing, or transitional states
+  // Transitional loading states and authenticated dashboard transition
   if (
     authState === "UNKNOWN" ||
     authState === "INITIALIZING" ||
     authState === "AUTHENTICATING" ||
     authState === "AUTHENTICATED_PENDING_ACTOR" ||
     authState === "SIGNING_OUT" ||
-    authState === "AUTHENTICATED" ||
-    authState === "UNAUTHENTICATED"
+    authState === "AUTHENTICATED"
   ) {
     return <ShellLoading />;
   }
@@ -60,6 +71,28 @@ export default function RootPage() {
     return <ShellError error={error} onRetry={refreshActor} />;
   }
 
-  return <ShellLoading />;
-}
+  // Render Pixel-Accurate Public Landing Page for Unauthenticated Visitors
+  return (
+    <div className="min-h-screen bg-slate-50 text-slate-800 flex flex-col antialiased selection:bg-blue-100 selection:text-blue-900">
+      {/* Header Navigation */}
+      <LandingHeader />
 
+      <main id="main-content" className="flex-1 focus:outline-hidden">
+        {/* Hero Section with Left Content, Dual CTAs, Campus Building Visual, and Trust Strip */}
+        <HeroSection />
+
+        {/* Floating Metrics Bar overlapping Hero and Process */}
+        <MetricsBar />
+
+        {/* 5-Step Process */}
+        <HowItWorks />
+
+        {/* 6-Card Role Ecosystem */}
+        <RoleEcosystem />
+      </main>
+
+      {/* Institutional Dark Navy Footer */}
+      <LandingFooter />
+    </div>
+  );
+}

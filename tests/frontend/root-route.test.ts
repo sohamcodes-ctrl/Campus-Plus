@@ -59,19 +59,20 @@ describe("Phase 08-C-D: Root Route ('/') Defect Correction & Entry Verification 
   // 1. LOGICAL CONTRACT TESTS: AUTHENTICATION & ROUTING FOUNDATION
   // =====================================================================
   describe("1. Root Route State Machine Traversal", () => {
-    it("1. '/' unauthenticated: renders accessible ShellLoading and does not show legacy Phase 03", () => {
+    it("1. '/' unauthenticated: renders institutional Public Landing Page with product narrative and no legacy Phase 03", () => {
       mockAuthState = "UNAUTHENTICATED";
       const html = renderToStaticMarkup(React.createElement(RootPage, null));
 
-      expect(html).contain(
-        'role="status"'
-      );
-      expect(html).contain(
-        'aria-live="polite"'
-      );
-      expect(html).contain("Verifying your campus access");
+      expect(html).contain("One Campus.");
+      expect(html).contain("One Accountable System.");
+      expect(html).contain("How It Works");
+      expect(html).contain("Who Can Use Campus Plus");
+      expect(html).contain("Institutional");
+      expect(html).contain('href="/login"');
+      expect(html).contain('href="/register"');
       expect(html).not.contain("Engineering Foundation");
       expect(html).not.contain("Phase 03");
+      expect(html).not.contain("Modular Monolith");
     });
 
     it("2. '/' authenticated: renders accessible ShellLoading during dashboard transition", () => {
@@ -114,8 +115,9 @@ describe("Phase 08-C-D: Root Route ('/') Defect Correction & Entry Verification 
       mockAuthError = "Authentication session expired. Please sign in again.";
 
       const html = renderToStaticMarkup(React.createElement(RootPage, null));
-      expect(html).contain('role="status"');
+      expect(html).contain("One Campus.");
       expect(html).not.contain("Phase 03");
+      expect(html).not.contain("Engineering Foundation");
     });
 
     it("6. invalid session / forbidden identity (FORBIDDEN): renders 403 ForbiddenState", () => {
@@ -209,7 +211,8 @@ describe("Phase 08-C-D: Root Route ('/') Defect Correction & Entry Verification 
       const fileContent = fs.readFileSync(pagePath, "utf-8");
 
       expect(fileContent).contain('router.replace("/dashboard")');
-      expect(fileContent).contain('router.replace("/login")');
+      expect(fileContent).contain('href="/login"');
+      expect(fileContent).contain('href="/register"');
     });
 
     it("17. no role spoofing through client navigation or URL injection", () => {

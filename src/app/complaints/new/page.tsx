@@ -228,7 +228,7 @@ function NewComplaintForm() {
           </div>
         </Card>
 
-        {/* Step 5: Supporting Attachments */}
+        {/* Step 4: Supporting Attachments */}
         <Card title="4. Evidence &amp; Attachments (Optional)" description="Upload photos or PDF documents supporting your grievance (max 3 files, 5MB each).">
           <div className="pt-2">
             <FileUploader
@@ -238,6 +238,45 @@ function NewComplaintForm() {
               maxSizeBytes={5 * 1024 * 1024}
               disabled={isSubmitting}
             />
+            <div className="mt-3 p-3 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-500">
+              <span className="font-semibold text-slate-700">Attachment Protocol (GAP-003):</span> Attached files are pre-signed and stored securely in Supabase Storage. Entity relation binding is tracked in the intake audit log.
+            </div>
+          </div>
+        </Card>
+
+        {/* Step 5: Review & Confirm Submission */}
+        <Card title="5. Review &amp; Confirm Submission" description="Review all provided details before authoritatively filing this grievance into the Campus Plus ledger.">
+          <div className="space-y-4 pt-2">
+            <div className="rounded-xl border border-slate-200 bg-slate-50/50 p-4 divide-y divide-slate-200/80 text-xs">
+              <div className="pb-2.5 flex justify-between items-center">
+                <span className="text-slate-500 font-medium">Jurisdiction &amp; Category:</span>
+                <span className="font-semibold text-slate-900">{selectedCategory.label}</span>
+              </div>
+              <div className="py-2.5 flex justify-between items-center">
+                <span className="text-slate-500 font-medium">Suggested Priority:</span>
+                <span className="font-semibold text-slate-900">{priority} Priority</span>
+              </div>
+              <div className="py-2.5 flex justify-between items-center">
+                <span className="text-slate-500 font-medium">Subject / Title:</span>
+                <span className="font-semibold text-slate-900 truncate max-w-xs">{title.trim() || "(Pending input)"}</span>
+              </div>
+              <div className="py-2.5 flex justify-between items-center">
+                <span className="text-slate-500 font-medium">Campus Location:</span>
+                <span className="font-semibold text-slate-900">{locationDetails.trim() || "(Pending input)"}</span>
+              </div>
+              <div className="py-2.5 flex justify-between items-center">
+                <span className="text-slate-500 font-medium">Description Length:</span>
+                <span className="font-semibold text-slate-900">{description.trim().length} chars (min 30)</span>
+              </div>
+              <div className="pt-2.5 flex justify-between items-center">
+                <span className="text-slate-500 font-medium">Attached Proofs:</span>
+                <span className="font-semibold text-slate-900">{files.length} file(s) attached</span>
+              </div>
+            </div>
+
+            <p className="text-[11px] text-slate-500">
+              Upon clicking &quot;Submit Grievance&quot;, your complaint will be assigned a unique immutable tracking code (CP-YYYY-XXXXX) and queued for triage by the designated department head.
+            </p>
           </div>
         </Card>
 

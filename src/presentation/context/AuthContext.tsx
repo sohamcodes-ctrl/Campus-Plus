@@ -257,7 +257,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setActor(null);
     setError(null);
     applyRoleTheme(UserRole.ROLE_STUDENT);
-    setAuthState("UNAUTHENTICATED");
+    if (typeof window !== "undefined") {
+      window.location.replace("/");
+    } else {
+      setAuthState("UNAUTHENTICATED");
+    }
   };
 
   const isLoading = useMemo(() => {

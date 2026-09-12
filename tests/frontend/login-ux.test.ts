@@ -140,7 +140,7 @@ describe("Phase 08-C-D: Login Experience UX Quality & Security Verification Suit
     it("renders institutional governance guarantees and charter", () => {
       const markup = renderToStaticMarkup(React.createElement(LoginForm));
 
-      expect(markup).toContain("Institutional Governance Architecture");
+      expect(markup).toContain("Campus Grievance Portal");
       expect(markup).toContain("Accountable Campus Grievance Resolution");
       expect(markup).toContain("Role-Scoped Privacy");
       expect(markup).toContain("Verifiable Closure");

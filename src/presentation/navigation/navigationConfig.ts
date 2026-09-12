@@ -43,11 +43,27 @@ export const NAVIGATION_ITEMS: NavigationItem[] = [
   },
   {
     id: "nav-new-complaint",
-    label: "New Grievance",
+    label: "Submit Complaint",
     href: "/complaints/new",
     allowedRoles: COMPLAINANT_ROLES,
     exact: true,
     mobilePriority: true,
+  },
+  {
+    id: "nav-my-complaints",
+    label: "My Complaints",
+    href: "/complaints",
+    allowedRoles: COMPLAINANT_ROLES,
+    exact: true,
+    mobilePriority: true,
+  },
+  {
+    id: "nav-complaints-dir",
+    label: "Complaints Directory",
+    href: "/complaints",
+    allowedRoles: STAFF_ROLES,
+    exact: true,
+    mobilePriority: false,
   },
   {
     id: "nav-triage",

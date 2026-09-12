@@ -88,8 +88,11 @@ export const MobileNav: React.FC = () => {
               onClick={async () => {
                 setIsMoreOpen(false);
                 await signOut();
+                if (typeof window !== "undefined") {
+                  window.location.replace("/");
+                }
               }}
-              className="w-full text-left px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50 rounded-md"
+              className="w-full text-left px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50 rounded-md cursor-pointer"
             >
               Sign Out
             </button>

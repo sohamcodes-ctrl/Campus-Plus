@@ -99,13 +99,14 @@ describe("Phase 08-C: Five Distinct Role Dashboard Experiences Suite", () => {
   // 1. STUDENT / COMPLAINANT DASHBOARD
   // ==========================================================================
   describe("1. Student Dashboard (ROLE_STUDENT)", () => {
-    it("renders prominent 'Submit New Grievance' primary action CTA", () => {
+    it("renders prominent 'Submit a Complaint' primary action CTA and natural workspace header", () => {
       mockRole = UserRole.ROLE_STUDENT;
       const html = renderToStaticMarkup(React.createElement(StudentDashboard));
 
-      expect(html).toContain("Submit New Grievance");
-      expect(html).toContain("Welcome, Student Portal");
-      expect(html).toContain("Active Complainant");
+      expect(html).toContain("Submit a Complaint");
+      expect(html).toContain("Student Grievance Workspace");
+      expect(html).toContain("Complainant");
+      expect(html).toContain("user@campusplus.internal");
     });
 
     it("renders real metrics cards for Total, In-Progress, Verification, Closed", () => {
@@ -196,12 +197,14 @@ describe("Phase 08-C: Five Distinct Role Dashboard Experiences Suite", () => {
       expect(html).toContain("Executive Attention Queue");
     });
 
-    it("renders honest cluster analytics state without fake graphs", () => {
+    it("renders honest cluster analytics state without fake graphs and honest audit metric state", () => {
       mockRole = UserRole.ROLE_MANAGEMENT;
       const html = renderToStaticMarkup(React.createElement(ManagementDashboard));
 
       expect(html).toContain("Cluster Analytics Service Pending Backend Integration");
       expect(html).not.toContain("AI Predictive Analytics");
+      expect(html).toContain("Audit metrics unavailable");
+      expect(html).not.toContain(">100%<");
     });
   });
 

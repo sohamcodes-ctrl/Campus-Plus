@@ -216,7 +216,8 @@ describe("Stage 08-C-D: Application Shell, Routing & Security Foundation Suite",
       const html = renderToStaticMarkup(React.createElement(Sidebar, null));
       expect(html).toContain('aria-label="Main Navigation"');
       expect(html).toContain("Dashboard");
-      expect(html).toContain("New Grievance");
+      expect(html).toContain("Submit Complaint");
+      expect(html).toContain("My Complaints");
       expect(html).toContain('aria-current="page"');
     });
 
