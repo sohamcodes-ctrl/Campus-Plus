@@ -18,6 +18,11 @@ import { TimelineFeed, TimelineEventItem } from "@/presentation/components/domai
 import { AlertBanner } from "@/presentation/components/feedback/AlertBanner";
 import { TextInput } from "@/presentation/components/forms/TextInput";
 import { TextArea } from "@/presentation/components/forms/TextArea";
+import {
+  formatDepartmentName,
+  formatDateTime,
+  formatCategoryLabel,
+} from "@/presentation/utils/formatters";
 
 interface ComplaintDetailPageProps {
   params: Promise<{ id: string }>;
@@ -350,11 +355,11 @@ function ComplaintDetailView({ id }: { id: string }) {
                 <div className="mt-4 pt-4 border-t border-slate-100 grid grid-cols-2 gap-4 text-xs">
                   <div>
                     <span className="font-semibold text-slate-500 uppercase">Category</span>
-                    <p className="text-slate-800 font-medium mt-0.5">{complaint.categoryId || "General"}</p>
+                    <p className="text-slate-800 font-medium mt-0.5">{formatCategoryLabel(complaint.categoryId)}</p>
                   </div>
                   <div>
                     <span className="font-semibold text-slate-500 uppercase">Department Jurisdiction</span>
-                    <p className="text-slate-800 font-medium mt-0.5">{complaint.departmentId}</p>
+                    <p className="text-slate-800 font-medium mt-0.5">{formatDepartmentName(complaint.departmentId)}</p>
                   </div>
                   <div>
                     <span className="font-semibold text-slate-500 uppercase">Location</span>
@@ -362,7 +367,7 @@ function ComplaintDetailView({ id }: { id: string }) {
                   </div>
                   <div>
                     <span className="font-semibold text-slate-500 uppercase">Submitted At</span>
-                    <p className="text-slate-800 font-medium mt-0.5">{new Date(complaint.createdAt).toLocaleString()}</p>
+                    <p className="text-slate-800 font-medium mt-0.5">{formatDateTime(complaint.createdAt)}</p>
                   </div>
                 </div>
               </Card>
@@ -373,7 +378,7 @@ function ComplaintDetailView({ id }: { id: string }) {
                   <div className="rounded-lg bg-emerald-50 border border-emerald-200 p-4 space-y-2">
                     <p className="text-sm text-emerald-950">{complaint.resolution.summary}</p>
                     <div className="text-xs text-emerald-800 pt-1 border-t border-emerald-200/60">
-                      Resolved on {new Date(complaint.resolution.resolvedAt).toLocaleString()}
+                      Resolved on {formatDateTime(complaint.resolution.resolvedAt)}
                     </div>
                   </div>
                 </Card>
@@ -410,7 +415,7 @@ function ComplaintDetailView({ id }: { id: string }) {
                 id="assign-handler-id"
                 label="Assignee Handler UUID"
                 required
-                placeholder="00000000-0000-0000-0000-000000001003"
+                placeholder="Institutional Staff Account UUID"
                 value={modalInput}
                 onChange={(e) => setModalInput(e.target.value)}
               />
@@ -430,7 +435,7 @@ function ComplaintDetailView({ id }: { id: string }) {
                 id="forward-dept-id"
                 label="Target Department UUID"
                 required
-                placeholder="00000000-0000-0000-0000-000000000020"
+                placeholder="Target Department UUID"
                 value={modalInput}
                 onChange={(e) => setModalInput(e.target.value)}
               />

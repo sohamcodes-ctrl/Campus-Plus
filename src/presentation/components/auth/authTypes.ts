@@ -20,12 +20,26 @@ export interface PersonaConfig {
   };
 }
 
+export type RegistrationState =
+  | "IDLE"
+  | "VALIDATING"
+  | "SUBMITTING"
+  | "SUCCESS"
+  | "PENDING_VERIFICATION"
+  | "AUTHENTICATION_REQUIRED"
+  | "VALIDATION_ERROR"
+  | "EMAIL_ALREADY_REGISTERED"
+  | "ROLE_NOT_ELIGIBLE"
+  | "INSTITUTIONAL_VERIFICATION_REQUIRED"
+  | "SERVER_ERROR"
+  | "NETWORK_ERROR";
+
 export const PERSONA_CONFIGS: Record<PersonaId, PersonaConfig> = {
   student: {
     id: "student",
     label: "Student",
     badgeLabel: "Complainant",
-    shortDescription: "Submit and track campus complaints",
+    shortDescription: "Raise and track campus complaints, verify resolutions, and stay informed.",
     detailedDescription: "Access student grievance intake, live resolution tracking, and resolution verification sign-off.",
     technicalRole: UserRole.ROLE_STUDENT,
     allowedTechnicalRoles: [UserRole.ROLE_STUDENT, UserRole.ROLE_FACULTY],
@@ -42,7 +56,7 @@ export const PERSONA_CONFIGS: Record<PersonaId, PersonaConfig> = {
     id: "handler",
     label: "Faculty / Complaint Handler",
     badgeLabel: "Staff Handler",
-    shortDescription: "Review, manage, and resolve complaints",
+    shortDescription: "Review, manage, assign, and resolve complaints within your authorized institutional responsibilities.",
     detailedDescription: "Operational workspace for assigned faculty and department staff to manage tasks, execute resolutions, and forward misrouted grievances.",
     technicalRole: UserRole.ROLE_HANDLER,
     allowedTechnicalRoles: [UserRole.ROLE_HANDLER, UserRole.ROLE_FACULTY],
@@ -59,7 +73,7 @@ export const PERSONA_CONFIGS: Record<PersonaId, PersonaConfig> = {
     id: "hod",
     label: "HOD",
     badgeLabel: "Department Head",
-    shortDescription: "Department oversight & escalation triage",
+    shortDescription: "Oversee department grievances, escalations, accountability, and resolution.",
     detailedDescription: "Departmental governance portal to review incoming complaints, assign handlers, monitor SLAs, and handle Tier 2 escalations.",
     technicalRole: UserRole.ROLE_DEPT_HEAD,
     allowedTechnicalRoles: [UserRole.ROLE_DEPT_HEAD],
@@ -76,7 +90,7 @@ export const PERSONA_CONFIGS: Record<PersonaId, PersonaConfig> = {
     id: "director",
     label: "Director / Senior Authority",
     badgeLabel: "Directorate",
-    shortDescription: "Institutional governance & oversight",
+    shortDescription: "Provide senior institutional oversight for escalated grievances and accountability.",
     detailedDescription: "Executive administration workspace providing cross-departmental supervision, audit ledger review, and institutional health monitoring.",
     technicalRole: UserRole.ROLE_ADMIN,
     allowedTechnicalRoles: [UserRole.ROLE_ADMIN],
@@ -86,14 +100,14 @@ export const PERSONA_CONFIGS: Record<PersonaId, PersonaConfig> = {
       accent: "#EEF3F7",
       surface: "#FBFCFD",
       text: "#37495A",
-      actionText: "#1C2B38",
+      actionText: "#223344",
     },
   },
   management: {
     id: "management",
     label: "Institutional Management",
     badgeLabel: "Governing Body",
-    shortDescription: "Executive KPI monitoring & accountability",
+    shortDescription: "Monitor institutional grievance governance, patterns, accountability, and campus-level improvement.",
     detailedDescription: "Strategic institutional intelligence for college leadership, tracking complaint volume trends, department SLAs, and resolving Tier 3 deadlocks.",
     technicalRole: UserRole.ROLE_MANAGEMENT,
     allowedTechnicalRoles: [UserRole.ROLE_MANAGEMENT],

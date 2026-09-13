@@ -14,6 +14,7 @@ import { useAuth } from "@/presentation/context/AuthContext";
 import { TrackingCodeBadge } from "@/presentation/components/domain/TrackingCodeBadge";
 import { StatusPill } from "@/presentation/components/domain/StatusPill";
 import { PriorityBadge } from "@/presentation/components/domain/PriorityBadge";
+import { formatDate, formatCategoryLabel } from "@/presentation/utils/formatters";
 
 const CATEGORY_OPTIONS = [
   { id: "ALL", label: "All Categories" },
@@ -237,7 +238,7 @@ function ComplaintsDirectory() {
                         {c.title}
                       </td>
                       <td className="py-3 px-3 whitespace-nowrap text-slate-600">
-                        {c.categoryId || "General"}
+                        {formatCategoryLabel(c.categoryId)}
                       </td>
                       <td className="py-3 px-3 whitespace-nowrap">
                         <StatusPill status={c.status} size="sm" />
@@ -246,7 +247,7 @@ function ComplaintsDirectory() {
                         <PriorityBadge priority={c.suggestedPriority} size="sm" />
                       </td>
                       <td className="py-3 px-3 whitespace-nowrap text-slate-500">
-                        {new Date(c.createdAt).toLocaleDateString()}
+                        {formatDate(c.createdAt)}
                       </td>
                       <td className="py-3 px-3 whitespace-nowrap text-right">
                         <Link
@@ -275,7 +276,7 @@ function ComplaintsDirectory() {
                   </h4>
                   <div className="flex items-center justify-between text-[11px] text-slate-500 pt-1 border-t border-slate-100">
                     <PriorityBadge priority={c.suggestedPriority} size="sm" />
-                    <span>{new Date(c.createdAt).toLocaleDateString()}</span>
+                    <span>{formatDate(c.createdAt)}</span>
                   </div>
                   <Link href={`/complaints/${c.id}`} className="block pt-1">
                     <Button variant="outline" size="sm" className="w-full text-xs">

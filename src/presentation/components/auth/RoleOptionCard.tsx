@@ -97,7 +97,7 @@ export function RoleOptionCard({ config, isSelected, onSelect }: RoleOptionCardP
         <div className="flex items-center justify-between gap-1">
           <p
             className={cn(
-              "text-xs sm:text-sm font-bold truncate leading-tight",
+              "text-xs sm:text-sm font-bold leading-snug",
               isSelected ? "text-slate-900" : "text-slate-800"
             )}
           >
@@ -106,7 +106,7 @@ export function RoleOptionCard({ config, isSelected, onSelect }: RoleOptionCardP
           {isSelected && (
             <span
               style={{ color: palette.actionText }}
-              className="inline-flex h-4 w-4 shrink-0 items-center justify-center"
+              className="inline-flex h-4 w-4 shrink-0 items-center justify-center ml-1"
               aria-hidden="true"
             >
               <svg className="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor">
@@ -115,7 +115,7 @@ export function RoleOptionCard({ config, isSelected, onSelect }: RoleOptionCardP
             </span>
           )}
         </div>
-        <p className="text-[11px] sm:text-xs text-slate-500 truncate leading-normal pt-0.5">
+        <p className="text-[11px] sm:text-xs text-slate-500 leading-normal pt-0.5">
           {shortDescription}
         </p>
       </div>

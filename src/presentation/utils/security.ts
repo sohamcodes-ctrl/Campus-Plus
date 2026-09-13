@@ -8,6 +8,10 @@ const ALLOWED_INTERNAL_PREFIXES = [
   "/complaints",
   "/login",
   "/register",
+  "/profile",
+  "/help",
+  "/privacy",
+  "/terms",
 ];
 
 /**
@@ -28,8 +32,11 @@ export function isValidInternalRedirect(url: string | null | undefined): boolean
   // Must not contain backslashes (Windows path manipulation or browser bypasses)
   if (trimmed.includes("\\")) return false;
 
-  // Must not contain colon before the first query or slash (e.g. /javascript:alert(1))
+  // Must not contain directory traversal sequences
   const pathBeforeQuery = trimmed.split("?")[0];
+  if (pathBeforeQuery.includes("..")) return false;
+
+  // Must not contain colon before the first query or slash (e.g. /javascript:alert(1))
   if (pathBeforeQuery.includes(":")) return false;
 
   // Must match allowed internal route prefixes

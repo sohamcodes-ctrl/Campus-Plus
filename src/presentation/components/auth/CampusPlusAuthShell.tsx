@@ -93,7 +93,7 @@ export function CampusPlusAuthShell({
       </header>
 
       {/* Main Viewport Content */}
-      <main className="flex-grow flex items-center justify-center py-8 sm:py-12 px-4 sm:px-6 lg:px-8">
+      <main className="flex-grow flex items-center justify-center py-6 sm:py-10 px-3 sm:px-6 lg:px-8">
         <div className="w-full max-w-6xl">{children}</div>
       </main>
 

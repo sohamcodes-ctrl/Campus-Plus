@@ -12,6 +12,7 @@ import { TrackingCodeBadge } from "@/presentation/components/domain/TrackingCode
 import { StatusPill } from "@/presentation/components/domain/StatusPill";
 import { PriorityBadge } from "@/presentation/components/domain/PriorityBadge";
 import { Button } from "@/presentation/components/primitives/Button";
+import { formatDepartmentName, formatDate } from "@/presentation/utils/formatters";
 
 export function HandlerDashboard() {
   const { actor } = useAuth();
@@ -68,7 +69,7 @@ export function HandlerDashboard() {
               </Badge>
             </div>
             <p className="mt-1 text-xs text-slate-500">
-              {actor?.departmentId ? `Department: ${actor.departmentId}` : "Department Scope Active"} — Manage assigned complaints, log progress, and record resolutions.
+              Department: {formatDepartmentName(actor?.departmentId)} — Manage assigned complaints, log progress, and record resolutions.
             </p>
           </div>
         </div>
@@ -181,7 +182,7 @@ export function HandlerDashboard() {
                         <StatusPill status={c.status} size="sm" />
                       </td>
                       <td className="py-2.5 px-3 whitespace-nowrap text-slate-500">
-                        {new Date(c.createdAt).toLocaleDateString()}
+                        {formatDate(c.createdAt)}
                       </td>
                       <td className="py-2.5 px-3 whitespace-nowrap text-right">
                         <Link
@@ -210,7 +211,7 @@ export function HandlerDashboard() {
                   </h4>
                   <div className="flex items-center justify-between text-[11px] text-slate-500 pt-1 border-t border-slate-100">
                     <PriorityBadge priority={c.suggestedPriority} size="sm" />
-                    <span>{new Date(c.createdAt).toLocaleDateString()}</span>
+                    <span>{formatDate(c.createdAt)}</span>
                   </div>
                   <Link href={`/complaints/${c.id}`} className="block pt-1">
                     <Button variant="outline" size="sm" className="w-full text-xs">

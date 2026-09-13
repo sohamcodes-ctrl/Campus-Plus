@@ -58,21 +58,16 @@ export function RoleSelector({
         role="radiogroup"
         aria-label="Account Type Selection"
         onKeyDown={handleKeyDown}
-        className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1"
+        className="flex flex-col gap-2 pt-1"
       >
-        {ALL_PERSONA_IDS.map((id, index) => {
-          // If 5th item, span 2 columns on small screens and up for visual balance
-          const isFifth = index === 4;
-          return (
-            <div key={id} className={isFifth ? "sm:col-span-2" : undefined}>
-              <RoleOptionCard
-                config={PERSONA_CONFIGS[id]}
-                isSelected={selectedPersona === id}
-                onSelect={onSelectPersona}
-              />
-            </div>
-          );
-        })}
+        {ALL_PERSONA_IDS.map((id) => (
+          <RoleOptionCard
+            key={id}
+            config={PERSONA_CONFIGS[id]}
+            isSelected={selectedPersona === id}
+            onSelect={onSelectPersona}
+          />
+        ))}
       </div>
     </div>
   );

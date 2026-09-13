@@ -5,6 +5,7 @@ import { Card } from "@/presentation/components/primitives/Card";
 import { Badge } from "@/presentation/components/primitives/Badge";
 import { Skeleton } from "@/presentation/components/primitives/Skeleton";
 import { AlertBanner } from "@/presentation/components/feedback/AlertBanner";
+import { formatDate, formatTime } from "@/presentation/utils/formatters";
 
 interface HealthCheckData {
   status: string;
@@ -108,8 +109,8 @@ export function AdminDashboard() {
 
             <div className="rounded-lg border border-slate-200 bg-slate-50 p-4 space-y-1">
               <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Last Health Probe</span>
-              <p className="font-mono text-xs text-slate-700">{new Date(health.timestamp).toLocaleTimeString()}</p>
-              <span className="text-[11px] text-slate-400">{new Date(health.timestamp).toLocaleDateString()}</span>
+              <p className="font-mono text-xs text-slate-700">{formatTime(health.timestamp)}</p>
+              <span className="text-[11px] text-slate-400">{formatDate(health.timestamp)}</span>
             </div>
           </div>
         )}

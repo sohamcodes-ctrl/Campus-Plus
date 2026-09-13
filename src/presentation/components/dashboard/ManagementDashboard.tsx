@@ -11,6 +11,7 @@ import { TrackingCodeBadge } from "@/presentation/components/domain/TrackingCode
 import { StatusPill } from "@/presentation/components/domain/StatusPill";
 import { PriorityBadge } from "@/presentation/components/domain/PriorityBadge";
 import { Button } from "@/presentation/components/primitives/Button";
+import { formatDate } from "@/presentation/utils/formatters";
 
 export function ManagementDashboard() {
   const [complaints, setComplaints] = useState<ComplaintDTO[]>([]);
@@ -148,7 +149,7 @@ export function ManagementDashboard() {
                         <StatusPill status={c.status} size="sm" />
                       </td>
                       <td className="py-2.5 px-3 whitespace-nowrap text-slate-500">
-                        {new Date(c.createdAt).toLocaleDateString()}
+                        {formatDate(c.createdAt)}
                       </td>
                       <td className="py-2.5 px-3 whitespace-nowrap text-right">
                         <Link
@@ -177,7 +178,7 @@ export function ManagementDashboard() {
                   </h4>
                   <div className="flex items-center justify-between text-[11px] text-slate-500 pt-1 border-t border-slate-100">
                     <PriorityBadge priority={c.suggestedPriority} size="sm" />
-                    <span>{new Date(c.createdAt).toLocaleDateString()}</span>
+                    <span>{formatDate(c.createdAt)}</span>
                   </div>
                   <Link href={`/complaints/${c.id}`} className="block pt-1">
                     <Button variant="outline" size="sm" className="w-full text-xs">
