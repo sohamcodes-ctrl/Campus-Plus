@@ -107,7 +107,7 @@ export interface AuthContextValue {
   refreshActor: () => Promise<void>;
 }
 
-const AuthContext = createContext<AuthContextValue | null>(null);
+export const AuthContext = createContext<AuthContextValue | null>(null);
 
 let browserSupabaseClient: SupabaseClient | null = null;
 

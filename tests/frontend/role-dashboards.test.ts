@@ -4,6 +4,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 
 // Components under test
 import { StudentDashboard } from "@/presentation/components/dashboard/StudentDashboard";
+import { StudentActionRequiredBanner } from "@/presentation/components/dashboard/student/StudentActionRequiredBanner";
 import { HandlerDashboard } from "@/presentation/components/dashboard/HandlerDashboard";
 import { HodDashboard } from "@/presentation/components/dashboard/HodDashboard";
 import { ManagementDashboard } from "@/presentation/components/dashboard/ManagementDashboard";
@@ -96,36 +97,76 @@ describe("Phase 08-C: Five Distinct Role Dashboard Experiences Suite", () => {
   });
 
   // ==========================================================================
-  // 1. STUDENT / COMPLAINANT DASHBOARD
+  // 1. STUDENT / COMPLAINANT DASHBOARD (AUTHORITATIVE HIGH-FIDELITY REFERENCE)
   // ==========================================================================
   describe("1. Student Dashboard (ROLE_STUDENT)", () => {
-    it("renders prominent 'Submit a Complaint' primary action CTA and natural workspace header", () => {
+    it("renders student welcome hero with identity greeting and mission quote", () => {
       mockRole = UserRole.ROLE_STUDENT;
       const html = renderToStaticMarkup(React.createElement(StudentDashboard));
 
-      expect(html).toContain("Submit a Complaint");
-      expect(html).toContain("Student Grievance Workspace");
-      expect(html).toContain("Complainant");
-      expect(html).toContain("user@campusplus.internal");
+      expect(html).toContain("Welcome back,");
+      expect(html).toContain("Your voice matters. We are here to listen, act, and resolve.");
+      expect(html).toContain("R.C. Patel Institute of Technology");
     });
 
-    it("renders real metrics cards for Total, In-Progress, Verification, Closed", () => {
+    it("renders real metrics cards for Total Complaints, In Progress, and Resolved", () => {
       mockRole = UserRole.ROLE_STUDENT;
       const html = renderToStaticMarkup(React.createElement(StudentDashboard));
 
-      expect(html).toContain("Total Filed");
-      expect(html).toContain("Active In-Progress");
-      expect(html).toContain("Awaiting Verification");
-      expect(html).toContain("Closed");
+      expect(html).toContain("Total Complaints");
+      expect(html).toContain("You have raised");
+      expect(html).toContain("In Progress");
+      expect(html).toContain("Currently being handled");
+      expect(html).toContain("Resolved");
+      expect(html).toContain("Successfully resolved");
     });
 
-    it("renders 'My Active Complaints' table header with tracking code column", () => {
+    it("renders 'Recent Complaints' table header with Tracking ID, Category, Priority, and Action columns", () => {
       mockRole = UserRole.ROLE_STUDENT;
       const html = renderToStaticMarkup(React.createElement(StudentDashboard));
 
-      expect(html).toContain("My Active Complaints");
-      expect(html).toContain("Tracking Code");
-      expect(html).toContain("Subject");
+      expect(html).toContain("Recent Complaints");
+      expect(html).toContain("Tracking ID");
+      expect(html).toContain("Title");
+      expect(html).toContain("Category");
+      expect(html).toContain("Priority");
+      expect(html).toContain("Status");
+      expect(html).toContain("Last Updated");
+      expect(html).toContain("Action");
+    });
+
+    it("renders Quick Actions card and Announcements section matching reference design", () => {
+      mockRole = UserRole.ROLE_STUDENT;
+      const html = renderToStaticMarkup(React.createElement(StudentDashboard));
+
+      expect(html).toContain("Quick Actions");
+      expect(html).toContain("Submit New Complaint");
+      expect(html).toContain("View My Complaints");
+      expect(html).toContain("My Verifications");
+      expect(html).toContain("View Announcements");
+      expect(html).toContain("Announcements");
+    });
+
+    it("renders Action Required verification banner conditionally based on pending count", () => {
+      // Positive case: pending verification exists
+      const htmlWithPending = renderToStaticMarkup(
+        React.createElement(StudentActionRequiredBanner, {
+          pendingCount: 2,
+          firstPendingComplaintId: "c-2",
+        })
+      );
+      expect(htmlWithPending).toContain("Action Required");
+      expect(htmlWithPending).toContain("awaiting your verification");
+      expect(htmlWithPending).toContain("Review Now");
+      expect(htmlWithPending).toContain("/complaints/c-2");
+
+      // Negative case: zero pending verifications (honest omission)
+      const htmlZeroPending = renderToStaticMarkup(
+        React.createElement(StudentActionRequiredBanner, {
+          pendingCount: 0,
+        })
+      );
+      expect(htmlZeroPending).toBe("");
     });
   });
 

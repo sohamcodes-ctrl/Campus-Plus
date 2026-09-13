@@ -7,6 +7,7 @@ const ALLOWED_INTERNAL_PREFIXES = [
   "/dashboard",
   "/complaints",
   "/login",
+  "/register",
 ];
 
 /**

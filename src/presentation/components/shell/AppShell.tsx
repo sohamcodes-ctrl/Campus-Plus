@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { usePathname } from "next/navigation";
 import { TopBar } from "./TopBar";
 import { Sidebar } from "./Sidebar";
 import { MobileNav } from "./MobileNav";
@@ -11,6 +12,9 @@ export interface AppShellProps {
 }
 
 export const AppShell: React.FC<AppShellProps> = ({ children }) => {
+  const pathname = usePathname();
+  const isDashboard = pathname === "/dashboard" || pathname === "/student-preview";
+
   return (
     <div className="min-h-screen bg-slate-50 text-slate-800 flex flex-col antialiased">
       {/* WCAG Skip Navigation Link */}
@@ -34,7 +38,7 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
           className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 pb-20 md:pb-8 outline-hidden"
         >
           <div className="mx-auto max-w-6xl space-y-4">
-            <Breadcrumbs />
+            {!isDashboard && <Breadcrumbs />}
             {children}
           </div>
         </main>

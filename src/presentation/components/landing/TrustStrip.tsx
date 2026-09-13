@@ -9,37 +9,37 @@ import {
 export const TrustStrip: React.FC = () => {
   const items = [
     {
-      icon: <ShieldLockIcon className="w-5 h-5 text-[#0B3C78] shrink-0" />,
+      icon: <ShieldLockIcon className="w-4 h-4 text-[#0B3C78] shrink-0" />,
       line1: "Secure & Role-based",
       line2: "Access Control",
     },
     {
-      icon: <DocumentTrackIcon className="w-5 h-5 text-[#0B3C78] shrink-0" />,
+      icon: <DocumentTrackIcon className="w-4 h-4 text-[#0B3C78] shrink-0" />,
       line1: "Track Every Step",
       line2: "in Real-time",
     },
     {
-      icon: <BarChartIcon className="w-5 h-5 text-[#0B3C78] shrink-0" />,
+      icon: <BarChartIcon className="w-4 h-4 text-[#0B3C78] shrink-0" />,
       line1: "Transparency",
       line2: "You Can Trust",
     },
     {
-      icon: <ShieldCheckIcon className="w-5 h-5 text-[#0B3C78] shrink-0" />,
+      icon: <ShieldCheckIcon className="w-4 h-4 text-[#0B3C78] shrink-0" />,
       line1: "Institutional",
       line2: "Accountability",
     },
   ];
 
   return (
-    <div className="mt-10 sm:mt-12 pt-6 pb-2 border-t border-slate-200/60">
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-0 lg:divide-x lg:divide-slate-200">
+    <div className="mt-7 pt-5 border-t border-slate-200/50 max-w-xl lg:max-w-2xl">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-0 sm:divide-x sm:divide-slate-200/80">
         {items.map((item, idx) => (
           <div
             key={idx}
-            className={`flex items-center space-x-3 ${idx > 0 ? "lg:pl-6" : ""} ${idx < items.length - 1 ? "lg:pr-6" : ""}`}
+            className={`flex items-center space-x-2 ${idx > 0 ? "sm:pl-4" : ""} ${idx < items.length - 1 ? "sm:pr-4" : ""}`}
           >
             {item.icon}
-            <div className="text-[12px] sm:text-[13px] font-semibold text-slate-800 leading-snug">
+            <div className="text-[11px] sm:text-[11.5px] font-semibold text-slate-800 leading-tight">
               <div>{item.line1}</div>
               <div>{item.line2}</div>
             </div>
