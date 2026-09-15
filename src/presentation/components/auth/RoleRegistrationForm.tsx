@@ -161,24 +161,32 @@ export function RoleRegistrationForm({
             }}
             className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold border uppercase tracking-wider"
           >
-            {isPrivileged ? "Verification Pending" : "Intake Recorded"}
+            Institutional Verification Required
           </span>
           <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900">
-            {isPrivileged ? `${label} Onboarding Recorded` : "Student Enrollment Request Recorded"}
+            Account Request Submitted
           </h2>
           <p className="text-xs sm:text-sm text-slate-600 max-w-md mx-auto leading-relaxed">
-            Your registration details for <strong className="text-slate-800">{fullName}</strong> ({identifier}) have been logged for institutional validation under protocol <strong className="text-slate-900">{protocolCode}</strong>.
+            Your account intake request for <strong className="text-slate-800">{fullName}</strong> ({identifier}) has been recorded for institutional verification under protocol <strong className="text-slate-900">{protocolCode}</strong>.
           </p>
         </div>
 
-        {/* Security & Next Steps Callout */}
-        <div className="rounded-xl border border-slate-200 bg-slate-50/80 p-4 text-xs text-slate-600 text-left space-y-2">
-          <p className="font-bold text-slate-800">Identity &amp; Access Governance Notice:</p>
-          <ul className="list-disc list-inside space-y-1.5 text-[11px] text-slate-600">
+        {/* Institutional Verification & Provisioning Policy Notice */}
+        <div className="rounded-xl border border-slate-200 bg-slate-50/80 p-4 text-xs text-slate-600 text-left space-y-2.5">
+          <div className="flex items-center gap-2 font-bold text-slate-800">
+            <svg className="h-4 w-4 text-slate-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+            </svg>
+            <span>Institutional Provisioning Required</span>
+          </div>
+          <p className="text-[11px] text-slate-600 leading-relaxed">
+            Campus Plus enforces server-authoritative institutional provisioning. Newly submitted credentials cannot be used for signing in until your enrollment or appointment is validated and provisioned in the campus directory.
+          </p>
+          <ul className="list-disc list-inside space-y-1.5 text-[11px] text-slate-600 pt-1 border-t border-slate-200/60">
             {personaId === "student" && (
               <>
-                <li>An administrative verification notice will be dispatched to <span className="font-semibold text-slate-800">{email}</span>.</li>
-                <li>Once student roster validation is complete, your account will be activated for grievance submission.</li>
+                <li>Student roster validation will be processed by the Academic Registrar Office.</li>
+                <li>An official activation confirmation will be dispatched to <span className="font-semibold text-slate-800">{email}</span>.</li>
               </>
             )}
             {personaId === "handler" && (
@@ -210,22 +218,29 @@ export function RoleRegistrationForm({
 
         <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
           <Link
-            href="/login"
+            href="/"
             style={{
               backgroundColor: palette.primary,
               color: palette.actionText,
             }}
             className="w-full sm:w-auto inline-flex items-center justify-center rounded-xl px-6 py-2.5 text-xs font-bold shadow-xs hover:opacity-95 transition-opacity"
           >
-            Sign In with Verified Credentials &rarr;
+            &larr; Return to Campus Plus Home
           </Link>
           <button
             type="button"
             onClick={handleReset}
             className="w-full sm:w-auto inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors cursor-pointer"
           >
-            Submit Another Request
+            Submit Another Intake Request
           </button>
+        </div>
+
+        <div className="pt-2 border-t border-slate-100 text-center text-xs text-slate-500">
+          <span>Already have an active, pre-provisioned institutional account? </span>
+          <Link href="/login" className="font-semibold text-blue-600 hover:underline">
+            Sign In &rarr;
+          </Link>
         </div>
       </div>
     );

@@ -223,10 +223,10 @@ describe("Five-Role Authentication Architecture & Security Matrix", () => {
 
     it("sanitizes error messages without leaking technical stack traces or UUIDs", () => {
       expect(mapAuthErrorMessage(new Error("Invalid login credentials"))).toBe(
-        "Unable to sign in. Please check your credentials and try again."
+        "The email or password is incorrect."
       );
       expect(mapAuthErrorMessage(new Error("Failed to fetch"))).toBe(
-        "Unable to connect to authentication services. Please verify your network connection or contact IT support."
+        "We couldn't reach Campus Plus. Please check your connection and try again."
       );
       expect(
         mapAuthErrorMessage(new Error("Postgres error at 00003_identity_and_access_tables.sql user 123e4567-e89b-12d3-a456-426614174000"))

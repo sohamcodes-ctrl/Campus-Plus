@@ -168,8 +168,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setAuthState("FORBIDDEN");
         setError("Your campus account does not have access permissions.");
       } else if (err && typeof err === "object" && "statusCode" in err && (err as { statusCode: number }).statusCode === 401) {
-        setAuthState("UNAUTHENTICATED");
-        setError("Authentication session expired. Please sign in again.");
+        const errMsg = err instanceof Error ? err.message : "";
+        if (
+          errMsg.toLowerCase().includes("does not map to any active user record") ||
+          errMsg.toLowerCase().includes("not provisioned")
+        ) {
+          setAuthState("FORBIDDEN");
+          setError("Your account exists, but institutional access has not yet been provisioned.");
+        } else {
+          setAuthState("UNAUTHENTICATED");
+          setError("Authentication session expired. Please sign in again.");
+        }
       } else {
         setAuthState("ERROR");
         setError(err instanceof Error ? err.message : "Failed to verify server actor identity.");

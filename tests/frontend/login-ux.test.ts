@@ -95,28 +95,45 @@ describe("Phase 08-C-D: Login Experience UX Quality & Security Verification Suit
   // ==========================================================================
   // 2. ERROR MESSAGE MAPPING & ANTI-ENUMERATION (SEC-002, PRIV-001)
   // ==========================================================================
-  describe("2. Error Microcopy & Anti-Enumeration", () => {
+  describe("2. Error Microcopy & Safe Granular Classification", () => {
     it("maps 'Invalid login credentials' to calm institutional microcopy", () => {
       const result = mapAuthErrorMessage(new Error("Invalid login credentials"));
-      expect(result).toBe("Unable to sign in. Please check your credentials and try again.");
+      expect(result).toBe("The email or password is incorrect.");
     });
 
-    it("maps 'Email not confirmed' without revealing account existence", () => {
+    it("maps 'Email not confirmed' to verification guidance", () => {
       const result = mapAuthErrorMessage(new Error("Email not confirmed"));
-      expect(result).toBe("Unable to sign in. Please check your credentials and try again.");
+      expect(result).toBe("Please verify your institutional email before signing in.");
     });
 
-    it("maps 'User not found' without revealing non-existence of account", () => {
+    it("maps 'User not found' safely to generic credential mismatch", () => {
       const result = mapAuthErrorMessage(new Error("User not found"));
-      expect(result).toBe("Unable to sign in. Please check your credentials and try again.");
+      expect(result).toBe("The email or password is incorrect.");
+    });
+
+    it("maps deactivated or disabled accounts to inactivity notice", () => {
+      const result = mapAuthErrorMessage(new Error("User account is deactivated"));
+      expect(result).toBe("This account is currently inactive. Please contact your institution.");
+    });
+
+    it("maps unprovisioned identity to institutional provisioning notice", () => {
+      const result = mapAuthErrorMessage(
+        new Error("Authenticated identity does not map to any active user record in institution directory.")
+      );
+      expect(result).toBe("Your account exists, but institutional access has not yet been provisioned.");
     });
 
     it("maps network or timeout failures to connection guidance", () => {
       const result1 = mapAuthErrorMessage(new Error("Network connection failed"));
-      expect(result1).toContain("Unable to connect to authentication services");
+      expect(result1).toBe("We couldn't reach Campus Plus. Please check your connection and try again.");
 
       const result2 = mapAuthErrorMessage(new Error("Failed to fetch"));
-      expect(result2).toContain("Unable to connect to authentication services");
+      expect(result2).toBe("We couldn't reach Campus Plus. Please check your connection and try again.");
+    });
+
+    it("maps server failure to institutional retry message", () => {
+      const result = mapAuthErrorMessage(new Error("Internal Server Error 500"));
+      expect(result).toBe("Campus Plus could not complete authentication right now. Please try again.");
     });
 
     it("handles unknown or non-Error types safely with fallback", () => {

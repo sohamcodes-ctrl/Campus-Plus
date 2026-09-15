@@ -11,28 +11,107 @@ import { AlertBanner } from "@/presentation/components/feedback/AlertBanner";
 import { sanitizeRedirect } from "@/presentation/utils/security";
 import { formatRoleLabel } from "@/presentation/navigation/navigationConfig";
 
-export function mapAuthErrorMessage(err: unknown): string {
+export type AuthErrorCode =
+  | "INVALID_CREDENTIALS"
+  | "EMAIL_NOT_CONFIRMED"
+  | "ACCOUNT_INACTIVE"
+  | "IDENTITY_NOT_PROVISIONED"
+  | "NETWORK_FAILURE"
+  | "SERVER_FAILURE"
+  | "UNKNOWN_AUTH_FAILURE";
+
+export interface ParsedAuthError {
+  code: AuthErrorCode;
+  message: string;
+}
+
+export function parseAuthError(err: unknown): ParsedAuthError {
   if (err instanceof Error) {
     const msg = err.message.toLowerCase();
+
+    // 1. Email Not Confirmed
+    if (msg.includes("email not confirmed") || msg.includes("email_not_confirmed")) {
+      return {
+        code: "EMAIL_NOT_CONFIRMED",
+        message: "Please verify your institutional email before signing in.",
+      };
+    }
+
+    // 2. Account Inactive / Disabled
+    if (
+      msg.includes("deactivated") ||
+      msg.includes("disabled") ||
+      msg.includes("inactive") ||
+      msg.includes("user account is deactivated")
+    ) {
+      return {
+        code: "ACCOUNT_INACTIVE",
+        message: "This account is currently inactive. Please contact your institution.",
+      };
+    }
+
+    // 3. Identity Not Provisioned / Missing Role
+    if (
+      msg.includes("does not map to any active user record") ||
+      msg.includes("not provisioned") ||
+      msg.includes("not assigned an active campus role") ||
+      msg.includes("unmapped identity")
+    ) {
+      return {
+        code: "IDENTITY_NOT_PROVISIONED",
+        message: "Your account exists, but institutional access has not yet been provisioned.",
+      };
+    }
+
+    // 4. Network Failure
+    if (
+      msg.includes("network") ||
+      msg.includes("failed to fetch") ||
+      msg.includes("timeout") ||
+      msg.includes("could not reach")
+    ) {
+      return {
+        code: "NETWORK_FAILURE",
+        message: "We couldn't reach Campus Plus. Please check your connection and try again.",
+      };
+    }
+
+    // 5. Server Failure
+    if (
+      msg.includes("internal server error") ||
+      msg.includes("server failure") ||
+      msg.includes("not configured") ||
+      msg.includes("500")
+    ) {
+      return {
+        code: "SERVER_FAILURE",
+        message: "Campus Plus could not complete authentication right now. Please try again.",
+      };
+    }
+
+    // 6. Invalid Credentials (password mismatch, user not found, invalid_credentials)
     if (
       msg.includes("invalid login credentials") ||
       msg.includes("invalid credentials") ||
       msg.includes("wrong password") ||
-      msg.includes("email not confirmed") ||
-      msg.includes("user not found")
+      msg.includes("user not found") ||
+      msg.includes("invalid_credentials")
     ) {
-      return "Unable to sign in. Please check your credentials and try again.";
-    }
-    if (
-      msg.includes("not configured") ||
-      msg.includes("network") ||
-      msg.includes("failed to fetch") ||
-      msg.includes("timeout")
-    ) {
-      return "Unable to connect to authentication services. Please verify your network connection or contact IT support.";
+      return {
+        code: "INVALID_CREDENTIALS",
+        message: "The email or password is incorrect.",
+      };
     }
   }
-  return "Unable to verify campus credentials. Please check your details and try again.";
+
+  return {
+    code: "UNKNOWN_AUTH_FAILURE",
+    message: "Unable to verify campus credentials. Please check your details and try again.",
+  };
+}
+
+export function mapAuthErrorMessage(err: unknown): string {
+  return parseAuthError(err).message;
 }
 
 export interface SignInFormProps {
