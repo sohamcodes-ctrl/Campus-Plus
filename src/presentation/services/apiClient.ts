@@ -72,6 +72,11 @@ export interface SubmitComplaintResult {
   status: string;
 }
 
+export interface ReferenceData {
+  id: string;
+  [key: string]: unknown;
+}
+
 export interface ListComplaintsParams {
   page?: number;
   limit?: number;
@@ -250,6 +255,13 @@ export class ApiClient {
       body: payload,
       idempotencyKey: key,
     });
+    return res.data;
+  }
+
+  public async getReferenceData(
+    resource: "categories" | "departments" | "locations" | "handlers" | "sla-policies"
+  ): Promise<ReferenceData[]> {
+    const res = await this.request<ReferenceData[]>(`/api/v1/reference/${resource}`);
     return res.data;
   }
 

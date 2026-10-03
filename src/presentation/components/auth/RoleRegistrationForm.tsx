@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { PersonaConfig, RegistrationState } from "./authTypes";
 import { PasswordField } from "./PasswordField";
@@ -22,6 +22,9 @@ export function RoleRegistrationForm({
   const [email, setEmail] = useState("");
   const [identifier, setIdentifier] = useState(""); // Maps to users.roll_or_prn
   const [department, setDepartment] = useState(""); // Maps to department_memberships.department_id
+  const [departments, setDepartments] = useState<Array<{ id: string; name: string }>>([]);
+  const [programme, setProgramme] = useState("");
+  const [academicYear, setAcademicYear] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [agreeTerms, setAgreeTerms] = useState(false);
@@ -31,6 +34,18 @@ export function RoleRegistrationForm({
   const [validationError, setValidationError] = useState<string | null>(null);
 
   const isPrivileged = personaId !== "student";
+
+  useEffect(() => {
+    if (personaId !== "student" && personaId !== "handler" && personaId !== "hod") return;
+
+    fetch("/api/v1/reference/departments")
+      .then(async (response) => {
+        if (!response.ok) throw new Error("Unable to load departments.");
+        const payload = (await response.json()) as { data?: Array<{ id: string; name: string }> };
+        setDepartments(payload.data || []);
+      })
+      .catch(() => setDepartments([]));
+  }, [personaId]);
 
   // Protocol tracking codes per persona
   const protocolCode = {
@@ -66,7 +81,7 @@ export function RoleRegistrationForm({
     management: "Submit Board Governance Verification Request",
   }[personaId];
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setValidationError(null);
 
@@ -94,8 +109,8 @@ export function RoleRegistrationForm({
       setRegistrationState("VALIDATION_ERROR");
       return;
     }
-    if (password.length < 8) {
-      setValidationError("Password must be at least 8 characters in length.");
+    if (password.length < 12) {
+      setValidationError("Password must be at least 12 characters in length.");
       setRegistrationState("VALIDATION_ERROR");
       return;
     }
@@ -112,10 +127,31 @@ export function RoleRegistrationForm({
 
     setRegistrationState("SUBMITTING");
 
-    // Truthful institutional intake simulation (zero fake db writes per Rule 13 & 33)
-    setTimeout(() => {
+    try {
+      const response = await fetch("/api/v1/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: trimmedEmail,
+          fullName: trimmedName,
+          rollOrPrn: trimmedId,
+          departmentId: department || undefined,
+          programme: programme.trim() || undefined,
+          academicYear: academicYear ? Number(academicYear) : undefined,
+          requestedRole: personaConfig.technicalRole,
+          password,
+          acceptedTerms: agreeTerms,
+        }),
+      });
+      const payload = (await response.json()) as { success?: boolean; error?: { message?: string } };
+      if (!response.ok || !payload.success) {
+        throw new Error(payload.error?.message || "Unable to submit the enrollment request.");
+      }
       setRegistrationState(isPrivileged ? "INSTITUTIONAL_VERIFICATION_REQUIRED" : "PENDING_VERIFICATION");
-    }, 600);
+    } catch (error) {
+      setRegistrationState("SERVER_ERROR");
+      setValidationError(error instanceof Error ? error.message : "Unable to submit the enrollment request.");
+    }
   };
 
   const handleReset = () => {
@@ -124,6 +160,8 @@ export function RoleRegistrationForm({
     setEmail("");
     setIdentifier("");
     setDepartment("");
+    setProgramme("");
+    setAcademicYear("");
     setPassword("");
     setConfirmPassword("");
     setAgreeTerms(false);
@@ -348,13 +386,9 @@ export function RoleRegistrationForm({
                 className="block w-full rounded-lg border border-slate-300 bg-white px-3.5 py-2.5 text-xs sm:text-sm text-slate-900 shadow-2xs transition-colors focus:border-slate-500 focus:outline-hidden focus:ring-2 focus:ring-slate-200"
               >
                 <option value="">Select Academic Department</option>
-                <option value="Information Technology">Information Technology</option>
-                <option value="Computer Engineering">Computer Engineering</option>
-                <option value="Electronics & Telecommunication">Electronics & Telecommunication</option>
-                <option value="Mechanical Engineering">Mechanical Engineering</option>
-                <option value="Civil Engineering">Civil Engineering</option>
-                <option value="Electrical Engineering">Electrical Engineering</option>
-                <option value="Applied Sciences">Applied Sciences</option>
+                {departments.map((option) => (
+                  <option key={option.id} value={option.id}>{option.name}</option>
+                ))}
               </select>
             </div>
           ) : (
@@ -371,6 +405,22 @@ export function RoleRegistrationForm({
             </div>
           )}
         </div>
+
+        {personaId === "student" && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+            <div className="space-y-1.5">
+              <label htmlFor="reg-programme" className="block text-xs font-semibold text-slate-700">Programme</label>
+              <input id="reg-programme" type="text" value={programme} onChange={(e) => setProgramme(e.target.value)} placeholder="e.g. B.Tech Computer Engineering" className="block w-full rounded-lg border border-slate-300 bg-white px-3.5 py-2.5 text-xs sm:text-sm text-slate-900 shadow-2xs" />
+            </div>
+            <div className="space-y-1.5">
+              <label htmlFor="reg-academic-year" className="block text-xs font-semibold text-slate-700">Academic Year</label>
+              <select id="reg-academic-year" value={academicYear} onChange={(e) => setAcademicYear(e.target.value)} className="block w-full rounded-lg border border-slate-300 bg-white px-3.5 py-2.5 text-xs sm:text-sm text-slate-900 shadow-2xs">
+                <option value="">Select year</option>
+                {[1, 2, 3, 4, 5, 6].map((year) => <option key={year} value={year}>{year}</option>)}
+              </select>
+            </div>
+          </div>
+        )}
 
         {/* Institutional Email */}
         <div className="space-y-1.5">
@@ -397,8 +447,8 @@ export function RoleRegistrationForm({
             onChange={(e) => setPassword(e.target.value)}
             required
             autoComplete="new-password"
-            placeholder="Min 8 characters"
-            helperText="Minimum 8 characters"
+            placeholder="Min 12 characters"
+            helperText="Minimum 12 characters"
           />
           <PasswordField
             id="reg-confirm-password"

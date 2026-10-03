@@ -48,12 +48,12 @@ export class AuthenticationAdapter {
 
   public async extractActorContext(request: Request): Promise<ActorContext> {
     let resolvedUserId: string | null = null;
-    const isProduction = process.env.NODE_ENV === "production";
+    const isTestEnvironment = process.env.NODE_ENV !== "production" && process.env.VITEST === "true";
 
     // 1. Non-production test fixture header bypass (STRICTLY FORBIDDEN IN PRODUCTION)
     const testActorHeader = request.headers.get("x-actor-id");
 
-    if (!isProduction && testActorHeader) {
+    if (isTestEnvironment && testActorHeader) {
       resolvedUserId = testActorHeader.trim();
     } else {
       // 2. Standard Authorization Bearer Token Header
@@ -72,12 +72,9 @@ export class AuthenticationAdapter {
           }
           resolvedUserId = data.user.id;
         } else {
-          // Local/offline test fallback: if token matches UUID, use as userId
-          // IN PRODUCTION, this fallback is strictly rejected!
-          if (isProduction) {
-            throw new AuthenticationError("Live authentication provider is not configured in production environment.");
-          }
-          resolvedUserId = token;
+          throw new AuthenticationError(
+            "Live authentication provider is not configured in production environment."
+          );
         }
       }
     }

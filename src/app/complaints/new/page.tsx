@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ProtectedRoute } from "@/presentation/components/auth/ProtectedRoute";
@@ -13,14 +13,21 @@ import { TextArea } from "@/presentation/components/forms/TextArea";
 import { AlertBanner } from "@/presentation/components/feedback/AlertBanner";
 import { FileUploader, UploadedFileItem } from "@/presentation/components/domain/FileUploader";
 
-const CATEGORIES = [
-  { id: "NETWORK_WIFI", label: "Network & Campus Wi-Fi", defaultDept: "00000000-0000-0000-0000-000000000010" },
-  { id: "HOSTEL_MAINTENANCE", label: "Hostel Maintenance & Facilities", defaultDept: "00000000-0000-0000-0000-000000000020" },
-  { id: "CLASSROOM_INFRASTRUCTURE", label: "Classroom & Lab Infrastructure", defaultDept: "00000000-0000-0000-0000-000000000010" },
-  { id: "ACADEMIC_EVALUATION", label: "Academic & Evaluation Concerns", defaultDept: "00000000-0000-0000-0000-000000000010" },
-  { id: "CAMPUS_SANITATION", label: "Campus Sanitation & Grounds", defaultDept: "00000000-0000-0000-0000-000000000020" },
-  { id: "OTHER", label: "Other General Inquiries", defaultDept: "00000000-0000-0000-0000-000000000010" },
-];
+interface ComplaintCategory {
+  id: string;
+  name: string;
+  description?: string;
+  defaultDepartmentId: string;
+}
+
+interface CampusLocation {
+  id: string;
+  campus: string;
+  building: string;
+  block?: string;
+  floor?: string;
+  roomOrArea: string;
+}
 
 const PRIORITIES: Array<{ id: "LOW" | "MEDIUM" | "HIGH" | "URGENT"; label: string; desc: string }> = [
   { id: "LOW", label: "Low", desc: "Routine maintenance or minor non-blocking issue" },
@@ -33,7 +40,9 @@ function NewComplaintForm() {
   const router = useRouter();
 
   // Form State
-  const [categoryId, setCategoryId] = useState("NETWORK_WIFI");
+  const [categories, setCategories] = useState<ComplaintCategory[]>([]);
+  const [locations, setLocations] = useState<CampusLocation[]>([]);
+  const [categoryId, setCategoryId] = useState("");
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [locationDetails, setLocationDetails] = useState("");
@@ -44,7 +53,28 @@ function NewComplaintForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const selectedCategory = CATEGORIES.find((c) => c.id === categoryId) || CATEGORIES[0];
+  useEffect(() => {
+    let cancelled = false;
+    Promise.all([apiClient.getReferenceData("categories"), apiClient.getReferenceData("locations")])
+      .then(([categoryData, locationData]) => {
+        if (cancelled) return;
+        const loadedCategories = categoryData as unknown as ComplaintCategory[];
+        setCategories(loadedCategories);
+        setLocations(locationData as unknown as CampusLocation[]);
+        setCategoryId(loadedCategories[0]?.id || "");
+      })
+      .catch((error: unknown) => {
+        if (!cancelled) {
+          setErrorMessage(error instanceof Error ? error.message : "Unable to load complaint categories.");
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const selectedCategory = categories.find((category) => category.id === categoryId);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -65,6 +95,11 @@ function NewComplaintForm() {
 
     if (!locationDetails.trim()) {
       setErrorMessage("Please specify the campus location (e.g. Building, Room number, Floor).");
+      return;
+    }
+
+    if (!selectedCategory) {
+      setErrorMessage("Complaint categories are still loading. Please try again in a moment.");
       return;
     }
 
@@ -97,7 +132,7 @@ function NewComplaintForm() {
           title: trimmedTitle,
           description: trimmedDesc,
           categoryId: selectedCategory.id,
-          departmentId: selectedCategory.defaultDept,
+          departmentId: selectedCategory.defaultDepartmentId,
           locationDetails: locationDetails.trim(),
           suggestedPriority: priority,
         },
@@ -141,7 +176,7 @@ function NewComplaintForm() {
         {/* Step 1: Category Selection */}
         <Card title="1. Category &amp; Jurisdiction" description="Select the institutional category that best describes your grievance.">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 pt-2">
-            {CATEGORIES.map((cat) => (
+            {categories.map((cat) => (
               <button
                 key={cat.id}
                 type="button"
@@ -152,7 +187,7 @@ function NewComplaintForm() {
                     : "border-slate-200 hover:border-slate-300 bg-white"
                 }`}
               >
-                <div className="font-semibold text-xs text-slate-900">{cat.label}</div>
+                <div className="font-semibold text-xs text-slate-900">{cat.name}</div>
                 <div className="text-[11px] text-slate-500 mt-0.5">Dispatched to responsible department</div>
               </button>
             ))}
@@ -198,9 +233,22 @@ function NewComplaintForm() {
                 placeholder="e.g. Academic Block B, 2nd Floor, Room 204"
                 value={locationDetails}
                 onChange={(e) => setLocationDetails(e.target.value)}
+                list="campus-location-suggestions"
                 disabled={isSubmitting}
                 helperText="Specify the building, floor, lab, or hostel room where the issue occurred."
               />
+              <datalist id="campus-location-suggestions">
+                {locations.map((location) => (
+                  <option
+                    key={location.id}
+                    value={[location.building, location.block, location.floor, location.roomOrArea]
+                      .filter(Boolean)
+                      .join(", ")}
+                  >
+                    {location.campus}
+                  </option>
+                ))}
+              </datalist>
             </div>
           </div>
         </Card>
@@ -250,7 +298,7 @@ function NewComplaintForm() {
             <div className="rounded-xl border border-slate-200 bg-slate-50/50 p-4 divide-y divide-slate-200/80 text-xs">
               <div className="pb-2.5 flex justify-between items-center">
                 <span className="text-slate-500 font-medium">Jurisdiction &amp; Category:</span>
-                <span className="font-semibold text-slate-900">{selectedCategory.label}</span>
+                <span className="font-semibold text-slate-900">{selectedCategory?.name || "Loading categories..."}</span>
               </div>
               <div className="py-2.5 flex justify-between items-center">
                 <span className="text-slate-500 font-medium">Suggested Priority:</span>
