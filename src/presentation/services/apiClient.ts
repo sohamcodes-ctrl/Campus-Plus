@@ -64,6 +64,12 @@ export interface SubmitComplaintInput {
   locationDetails: string;
   locationId?: string;
   suggestedPriority?: "LOW" | "MEDIUM" | "HIGH" | "URGENT";
+  attachments?: Array<{
+    storageKey: string;
+    originalFilename: string;
+    mimeType: "image/jpeg" | "image/png" | "application/pdf";
+    fileSizeBytes: number;
+  }>;
 }
 
 export interface SubmitComplaintResult {
@@ -262,6 +268,23 @@ export class ApiClient {
     resource: "categories" | "departments" | "locations" | "handlers" | "sla-policies"
   ): Promise<ReferenceData[]> {
     const res = await this.request<ReferenceData[]>(`/api/v1/reference/${resource}`);
+    return res.data;
+  }
+
+  public async getNotifications(): Promise<{
+    items: Array<Record<string, unknown>>;
+    unreadCount: number;
+  }> {
+    const res = await this.request<{ items: Array<Record<string, unknown>>; unreadCount: number }>(
+      "/api/v1/notifications"
+    );
+    return res.data;
+  }
+
+  public async markNotificationRead(id: string): Promise<{ markedRead: boolean }> {
+    const res = await this.request<{ markedRead: boolean }>(`/api/v1/notifications/${id}/read`, {
+      method: "POST",
+    });
     return res.data;
   }
 

@@ -14,12 +14,12 @@ describe("Database Migration & Reproducibility Suite", () => {
 
   it("should apply all migrations from an empty database cleanly", async () => {
     const result = await migrator.migrate();
-    expect(result.applied.length).toBe(11);
+    expect(result.applied.length).toBe(12);
     expect(result.verified.length).toBe(0);
 
     // Verify _schema_migrations rows
     const res = await db.query("SELECT version, name FROM _schema_migrations ORDER BY version ASC;");
-    expect(res.rows.length).toBe(11);
+    expect(res.rows.length).toBe(12);
 
     // Verify tracking_code_seq created by migration 00010
     const seqRes = await db.query("SELECT nextval('tracking_code_seq') as next_val;");
@@ -29,7 +29,7 @@ describe("Database Migration & Reproducibility Suite", () => {
   it("should be idempotent and verify checksums on subsequent runs", async () => {
     const secondRun = await migrator.migrate();
     expect(secondRun.applied.length).toBe(0);
-    expect(secondRun.verified.length).toBe(11);
+    expect(secondRun.verified.length).toBe(12);
   });
 
   it("should successfully apply reference seed and synthetic dev seed", async () => {

@@ -21,6 +21,8 @@ import {
 import { IComplaintRepository } from "@/application/ports/IComplaintRepository";
 import { IComplaintQueryRepository } from "@/application/ports/IComplaintQueryRepository";
 import { DatabaseQueryInterface } from "./migrator";
+import { executeTransaction } from "./pool";
+import { ComplaintAttachmentInput } from "@/application/ports/IComplaintRepository";
 
 interface ComplaintRow {
   id: string;
@@ -160,6 +162,35 @@ export class PostgresComplaintRepository implements IComplaintRepository, ICompl
     );
     if (res.rows.length === 0) return null;
     return await this.rehydrateComplaint(res.rows[0]);
+  }
+
+  public async saveWithAttachments(
+    complaint: Complaint,
+    attachments: ComplaintAttachmentInput[],
+    expectedVersion?: number
+  ): Promise<void> {
+    await executeTransaction(async (tx) => {
+      const transactionRepository = new PostgresComplaintRepository(tx);
+      await transactionRepository.save(complaint, expectedVersion);
+
+      for (const attachment of attachments) {
+        await tx.query(
+          `INSERT INTO attachments (
+            complaint_id, storage_key, original_filename, mime_type,
+            file_size_bytes, attachment_type, uploaded_by_id
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7);`,
+          [
+            complaint.id.toString(),
+            attachment.storageKey,
+            attachment.originalFilename,
+            attachment.mimeType,
+            attachment.fileSizeBytes,
+            attachment.attachmentType || "INITIAL_EVIDENCE",
+            complaint.complainantId.toString(),
+          ]
+        );
+      }
+    });
   }
 
   public async save(complaint: Complaint, expectedVersion?: number): Promise<void> {

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/presentation/context/AuthContext";
@@ -9,15 +9,31 @@ import { Drawer } from "@/presentation/components/overlays/Drawer";
 import { formatRoleLabel } from "@/presentation/navigation/navigationConfig";
 import { UserRole } from "@/domain/complaint";
 import { cn } from "@/presentation/utils/cn";
+import { apiClient } from "@/presentation/services/apiClient";
 
 export const TopBar: React.FC = () => {
   const { role, user, signOut } = useAuth();
   const pathname = usePathname();
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+  const [notifications, setNotifications] = useState<Array<Record<string, unknown>>>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
 
   const isComplainant =
     role === UserRole.ROLE_STUDENT || role === UserRole.ROLE_FACULTY;
+
+  useEffect(() => {
+    if (!isNotificationsOpen) return;
+    apiClient.getNotifications()
+      .then((result) => {
+        setNotifications(result.items);
+        setUnreadCount(result.unreadCount);
+      })
+      .catch(() => {
+        setNotifications([]);
+        setUnreadCount(0);
+      });
+  }, [isNotificationsOpen]);
 
   // Student name and initials resolution
   const studentName =
@@ -129,7 +145,7 @@ export const TopBar: React.FC = () => {
             </Badge>
           )}
 
-          {/* In-App Notifications Drawer Trigger (GAP-001/002 compliant: no fake '3' count) */}
+          {/* In-app notifications are loaded from the authenticated inbox. */}
           <button
             type="button"
             onClick={() => setIsNotificationsOpen(true)}
@@ -150,6 +166,11 @@ export const TopBar: React.FC = () => {
                 d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
               />
             </svg>
+            {unreadCount > 0 && (
+              <span className="absolute -right-1 -top-1 min-w-4 rounded-full bg-red-600 px-1 text-[9px] font-bold text-white">
+                {unreadCount > 99 ? "99+" : unreadCount}
+              </span>
+            )}
           </button>
 
           {/* User Profile & Dropdown Menu */}
@@ -235,13 +256,31 @@ export const TopBar: React.FC = () => {
         </div>
       </div>
 
-      {/* Notifications Drawer (Honest API Gap Handling per GAP-001) */}
+      {/* Notifications Drawer */}
       <Drawer
         isOpen={isNotificationsOpen}
         onClose={() => setIsNotificationsOpen(false)}
         title="Notifications"
       >
-        <div className="space-y-4 text-center py-8 text-sm text-slate-500">
+        <div className="space-y-3 py-4 text-sm text-slate-500">
+          {notifications.length > 0 ? notifications.map((notification) => {
+            const id = String(notification.id);
+            const isRead = Boolean(notification.is_read);
+            return (
+              <button
+                key={id}
+                type="button"
+                onClick={() => apiClient.markNotificationRead(id).then(() => {
+                  setNotifications((current) => current.map((item) => item.id === id ? { ...item, is_read: true } : item));
+                  setUnreadCount((count) => Math.max(0, count - (isRead ? 0 : 1)));
+                })}
+                className={`w-full rounded-lg border p-3 text-left ${isRead ? "border-slate-200 bg-white" : "border-blue-200 bg-blue-50"}`}
+              >
+                <div className="font-semibold text-slate-800">{String(notification.title)}</div>
+                <div className="mt-1 text-xs text-slate-600">{String(notification.message)}</div>
+              </button>
+            );
+          }) : <>
           <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-[#EAF2FB] text-[#1E3A5F]">
             <svg
               className="h-6 w-6"
@@ -257,11 +296,11 @@ export const TopBar: React.FC = () => {
               />
             </svg>
           </div>
-          <h4 className="font-semibold text-slate-800">No New Notifications</h4>
+          <h4 className="font-semibold text-slate-800">You&apos;re all caught up</h4>
           <p className="text-xs text-slate-500 max-w-xs mx-auto">
-            In-app notification subscription will be integrated in an upcoming phase.
-            (Tracked under API Gap GAP-001 &amp; GAP-002).
+            New complaint updates and actions will appear here.
           </p>
+          </>}
         </div>
       </Drawer>
     </header>

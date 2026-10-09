@@ -105,24 +105,33 @@ function NewComplaintForm() {
 
     setIsSubmitting(true);
     try {
-      // Execute upload presigning for any attached files
+      const uploadedAttachments: Array<{
+        storageKey: string;
+        originalFilename: string;
+        mimeType: "image/jpeg" | "image/png" | "application/pdf";
+        fileSizeBytes: number;
+      }> = [];
+
       for (const item of files) {
-        try {
-          const presignRes = await apiClient.presignUpload({
-            filename: item.name,
-            mimeType: item.file.type as "image/jpeg" | "image/png" | "application/pdf",
-            fileSizeBytes: item.sizeBytes,
-          });
-          if (presignRes && presignRes.uploadUrl) {
-            await fetch(presignRes.uploadUrl, {
-              method: "PUT",
-              headers: { "Content-Type": item.file.type },
-              body: item.file,
-            });
-          }
-        } catch {
-          // File upload best-effort; does not block grievance filing
+        const presignRes = await apiClient.presignUpload({
+          filename: item.name,
+          mimeType: item.file.type as "image/jpeg" | "image/png" | "application/pdf",
+          fileSizeBytes: item.sizeBytes,
+        });
+        const uploadResponse = await fetch(presignRes.uploadUrl, {
+          method: "PUT",
+          headers: { "Content-Type": item.file.type },
+          body: item.file,
+        });
+        if (!uploadResponse.ok) {
+          throw new Error(`Upload failed for ${item.name}. Please retry before submitting.`);
         }
+        uploadedAttachments.push({
+          storageKey: presignRes.fileKey,
+          originalFilename: item.name,
+          mimeType: item.file.type as "image/jpeg" | "image/png" | "application/pdf",
+          fileSizeBytes: item.sizeBytes,
+        });
       }
 
       // Submit complaint with UUIDv4 Idempotency-Key
@@ -135,6 +144,7 @@ function NewComplaintForm() {
           departmentId: selectedCategory.defaultDepartmentId,
           locationDetails: locationDetails.trim(),
           suggestedPriority: priority,
+          attachments: uploadedAttachments,
         },
         idempotencyKey
       );

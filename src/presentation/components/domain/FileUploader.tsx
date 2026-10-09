@@ -9,6 +9,7 @@ export interface UploadedFileItem {
   name: string;
   sizeBytes: number;
   mimeType: string;
+  storageKey?: string;
 }
 
 export interface FileUploaderProps {

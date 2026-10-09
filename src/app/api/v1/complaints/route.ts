@@ -28,6 +28,7 @@ export async function POST(request: NextRequest) {
       locationDetails: validated.locationDetails,
       locationId: validated.locationId,
       suggestedPriority: validated.suggestedPriority,
+      attachments: validated.attachments,
       idempotencyKey,
     });
 

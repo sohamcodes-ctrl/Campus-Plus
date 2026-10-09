@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 import { UseCase } from "../common/UseCase";
-import { IComplaintRepository } from "../ports/IComplaintRepository";
+import { ComplaintAttachmentInput, IComplaintRepository } from "../ports/IComplaintRepository";
 import { ITrackingCodeGeneratorPort } from "../ports/ITrackingCodeGeneratorPort";
 import { IIdempotencyPort } from "../ports/IIdempotencyPort";
 import { Complaint } from "@/domain/complaint";
@@ -18,6 +18,7 @@ export interface SubmitComplaintCommand {
   locationId?: string;
   suggestedPriority?: string;
   idempotencyKey?: string;
+  attachments?: ComplaintAttachmentInput[];
 }
 
 export interface SubmitComplaintResult {
@@ -78,7 +79,11 @@ export class SubmitComplaintUseCase implements UseCase<SubmitComplaintCommand, R
     const complaint = complaintResult.value;
 
     // 4. Persistence
-    await this.complaintRepo.save(complaint);
+    if (this.complaintRepo.saveWithAttachments) {
+      await this.complaintRepo.saveWithAttachments(complaint, command.attachments ?? []);
+    } else {
+      await this.complaintRepo.save(complaint);
+    }
 
     const result: SubmitComplaintResult = {
       complaintId: complaint.id.toString(),
