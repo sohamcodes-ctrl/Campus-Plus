@@ -14,7 +14,7 @@ const queries: Record<Resource, string> = {
                 FROM departments WHERE is_active = TRUE ORDER BY name ASC;`,
   locations: `SELECT id, campus, building, block, floor, room_or_area AS "roomOrArea"
               FROM locations WHERE is_active = TRUE ORDER BY campus, building, block, floor, room_or_area;`,
-  handlers: `SELECT u.id, u.full_name AS "fullName", u.email, dm.department_id AS "departmentId"
+  handlers: `SELECT u.id, u.full_name AS "fullName", dm.department_id AS "departmentId"
              FROM users u
              INNER JOIN user_roles ur ON ur.user_id = u.id AND ur.role_id IN ('ROLE_HANDLER', 'ROLE_DEPT_HEAD')
              INNER JOIN department_memberships dm ON dm.user_id = u.id AND dm.is_active = TRUE

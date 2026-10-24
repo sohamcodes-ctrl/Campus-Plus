@@ -17,12 +17,14 @@ import {
   ComplaintEscalation,
   Resolution,
   StaleVersionConflictError,
+  ComplaintNotFoundError,
 } from "@/domain/complaint";
 import { IComplaintRepository } from "@/application/ports/IComplaintRepository";
 import { IComplaintQueryRepository } from "@/application/ports/IComplaintQueryRepository";
 import { DatabaseQueryInterface } from "./migrator";
 import { executeTransaction } from "./pool";
 import { ComplaintAttachmentInput } from "@/application/ports/IComplaintRepository";
+import { AuthorizationError } from "@/shared/errors/AppError";
 
 interface ComplaintRow {
   id: string;
@@ -144,7 +146,10 @@ export interface TimelineEventRow {
  * transactional audit logging (action_history), and transactional outbox event publishing.
  */
 export class PostgresComplaintRepository implements IComplaintRepository, IComplaintQueryRepository {
-  constructor(private readonly db: DatabaseQueryInterface) {}
+  constructor(
+    private readonly db: DatabaseQueryInterface,
+    private readonly transactionScoped: boolean = false
+  ) {}
 
   public async findById(id: ComplaintId): Promise<Complaint | null> {
     const res = await this.db.query<ComplaintRow>(
@@ -170,7 +175,34 @@ export class PostgresComplaintRepository implements IComplaintRepository, ICompl
     expectedVersion?: number
   ): Promise<void> {
     await executeTransaction(async (tx) => {
-      const transactionRepository = new PostgresComplaintRepository(tx);
+      const transactionRepository = new PostgresComplaintRepository(tx, true);
+
+      for (const attachment of attachments) {
+        const upload = await tx.query<{
+          original_filename: string;
+          mime_type: string;
+          file_size_bytes: number;
+        }>(
+          `SELECT original_filename, mime_type, file_size_bytes
+           FROM temporary_attachment_uploads
+           WHERE storage_key = $1
+             AND uploaded_by_id = $2
+             AND expires_at > CURRENT_TIMESTAMP
+           FOR UPDATE;`,
+          [attachment.storageKey, complaint.complainantId.toString()]
+        );
+
+        const uploadedMetadata = upload.rows[0];
+        if (
+          !uploadedMetadata ||
+          uploadedMetadata.original_filename !== attachment.originalFilename ||
+          uploadedMetadata.mime_type !== attachment.mimeType ||
+          uploadedMetadata.file_size_bytes !== attachment.fileSizeBytes
+        ) {
+          throw new AuthorizationError("An attachment upload is invalid, expired, or does not belong to this account.");
+        }
+      }
+
       await transactionRepository.save(complaint, expectedVersion);
 
       for (const attachment of attachments) {
@@ -189,11 +221,31 @@ export class PostgresComplaintRepository implements IComplaintRepository, ICompl
             complaint.complainantId.toString(),
           ]
         );
+
+        await tx.query(
+          `DELETE FROM temporary_attachment_uploads
+           WHERE storage_key = $1 AND uploaded_by_id = $2;`,
+          [attachment.storageKey, complaint.complainantId.toString()]
+        );
       }
     });
+    complaint.clearEvents();
   }
 
   public async save(complaint: Complaint, expectedVersion?: number): Promise<void> {
+    if (this.transactionScoped) {
+      await this.persist(complaint, expectedVersion);
+      return;
+    }
+
+    await executeTransaction(async (tx) => {
+      const transactionRepository = new PostgresComplaintRepository(tx, true);
+      await transactionRepository.persist(complaint, expectedVersion);
+    });
+    complaint.clearEvents();
+  }
+
+  private async persist(complaint: Complaint, expectedVersion?: number): Promise<void> {
     const complaintId = complaint.id.toString();
 
     // 1. Check existing record for OCC verification
@@ -204,10 +256,12 @@ export class PostgresComplaintRepository implements IComplaintRepository, ICompl
 
     const isNew = existingRes.rows.length === 0;
 
-    if (!isNew && expectedVersion !== undefined) {
+    const expectedDatabaseVersion = expectedVersion ?? complaint.version.toNumber() - 1;
+
+    if (!isNew) {
       const currentDbVersion = existingRes.rows[0].version;
-      if (currentDbVersion !== expectedVersion) {
-        throw new StaleVersionConflictError(currentDbVersion, expectedVersion);
+      if (expectedDatabaseVersion < 1 || currentDbVersion !== expectedDatabaseVersion) {
+        throw new StaleVersionConflictError(currentDbVersion, expectedDatabaseVersion);
       }
     }
 
@@ -249,7 +303,7 @@ export class PostgresComplaintRepository implements IComplaintRepository, ICompl
       );
     } else {
       // 3. Update existing complaint with version check
-      await this.db.query(
+      const updateRes = await this.db.query<{ id: string }>(
         `UPDATE complaints SET
           title = $2,
           description = $3,
@@ -268,7 +322,8 @@ export class PostgresComplaintRepository implements IComplaintRepository, ICompl
           resolved_at = $16,
           closed_at = $17,
           updated_at = CURRENT_TIMESTAMP
-        WHERE id = $1;`,
+        WHERE id = $1 AND version = $18
+        RETURNING id;`,
         [
           complaintId,
           complaint.title.toString(),
@@ -287,8 +342,20 @@ export class PostgresComplaintRepository implements IComplaintRepository, ICompl
           complaint.slaDueAt ?? null,
           complaint.resolvedAt ?? null,
           complaint.closedAt ?? null,
+          expectedDatabaseVersion,
         ]
       );
+
+      if (updateRes.rows.length === 0) {
+        const latestRes = await this.db.query<{ version: number }>(
+          "SELECT version FROM complaints WHERE id = $1;",
+          [complaintId]
+        );
+        if (latestRes.rows.length === 0) {
+          throw new ComplaintNotFoundError(complaintId);
+        }
+        throw new StaleVersionConflictError(latestRes.rows[0].version, expectedDatabaseVersion);
+      }
     }
 
     // 4. Synchronize Assignments
@@ -422,8 +489,6 @@ export class PostgresComplaintRepository implements IComplaintRepository, ICompl
       );
     }
 
-    // 9. Clear uncommitted events
-    complaint.clearEvents();
   }
 
   // --- Read Query Projections ---

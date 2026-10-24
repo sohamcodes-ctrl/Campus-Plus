@@ -7,6 +7,7 @@ import { GET as getComplaintHandler } from "@/app/api/v1/complaints/[id]/route";
 import { GET as getTimelineHandler } from "@/app/api/v1/complaints/[id]/timeline/route";
 import { POST as presignUploadHandler } from "@/app/api/v1/attachments/presign-upload/route";
 import { GET as authMeHandler } from "@/app/api/v1/auth/me/route";
+import { GET as referenceHandler } from "@/app/api/v1/reference/[resource]/route";
 
 const FIXTURES = {
   studentA: "00000000-0000-0000-0000-000000001001",
@@ -231,5 +232,19 @@ describe("Phase 06 API Contracts & Envelope Compliance", () => {
     expect(json.success).toBe(true);
     expect(json.data.userId).toBe(FIXTURES.studentA);
     expect(json.data.role).toBe("ROLE_STUDENT");
+  });
+
+  it("GET /api/v1/reference/handlers does not expose staff email addresses", async () => {
+    const req = new NextRequest("http://localhost/api/v1/reference/handlers", {
+      method: "GET",
+      headers: { "x-actor-id": FIXTURES.studentA },
+    });
+
+    const res = await referenceHandler(req, { params: Promise.resolve({ resource: "handlers" }) });
+    expect(res.status).toBe(200);
+    const json = await res.json();
+    expect(json.success).toBe(true);
+    expect(json.data.length).toBeGreaterThan(0);
+    expect(json.data.every((handler: Record<string, unknown>) => !("email" in handler))).toBe(true);
   });
 });

@@ -5,7 +5,9 @@ import fs from "fs";
 import path from "path";
 
 // Component under test
-import LoginPage, { LoginForm, mapAuthErrorMessage } from "@/app/login/page";
+import LoginPage from "@/app/login/page";
+import { LoginForm } from "@/presentation/components/auth/LoginForm";
+import { mapAuthErrorMessage } from "@/presentation/components/auth/SignInForm";
 
 // Security utility
 import { sanitizeRedirect } from "@/presentation/utils/security";
@@ -57,7 +59,7 @@ describe("Phase 08-C-D: Login Experience UX Quality & Security Verification Suit
   // ==========================================================================
   describe("1. Credential Purity & Zero Hardcoded Accounts", () => {
     it("source file initializes state strictly empty", () => {
-      const sourcePath = path.resolve(process.cwd(), "src/app/login/page.tsx");
+      const sourcePath = path.resolve(process.cwd(), "src/presentation/components/auth/LoginForm.tsx");
       const sourceCode = fs.readFileSync(sourcePath, "utf-8");
 
       // Verify strict empty useState initialization

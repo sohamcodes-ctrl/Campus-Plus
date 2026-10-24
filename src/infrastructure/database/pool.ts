@@ -1,9 +1,10 @@
-import { PGlite } from "@electric-sql/pglite";
+import type { PGlite as PGliteClient } from "@electric-sql/pglite";
 import { Pool as PgPool, PoolClient } from "pg";
+import type { PoolConfig } from "pg";
 import { DatabaseMigrator, DatabaseQueryInterface } from "./migrator";
 import path from "node:path";
 
-let globalDb: PGlite | null = null;
+let globalDb: PGliteClient | null = null;
 let liveDbPool: PgPool | null = null;
 let initialized = false;
 let initPromise: Promise<DatabaseQueryInterface> | null = null;
@@ -34,6 +35,37 @@ class PostgresClientQueryAdapter implements DatabaseQueryInterface {
   }
 }
 
+export function buildPostgresPoolConfig(connectionString: string): PoolConfig {
+  const connectionUrl = new URL(connectionString);
+  const configuredHost = connectionUrl.searchParams.getAll("host").at(-1);
+  const hosts = (configuredHost || connectionUrl.hostname)
+    .split(",")
+    .map((host) => host.replace(/^\[|\]$/g, "").trim().toLowerCase());
+  const isLocalhost =
+    hosts.length > 0 && hosts.every((host) => host.startsWith("/") || ["localhost", "127.0.0.1", "::1"].includes(host));
+
+  const requestedSslModes = [
+    connectionUrl.searchParams.getAll("ssl").at(-1),
+    connectionUrl.searchParams.getAll("sslmode").at(-1),
+  ].map((value) => value?.toLowerCase());
+  const usesLibpqCompatibility = connectionUrl.searchParams.getAll("uselibpqcompat").at(-1) === "true";
+  const requestedSslMode = connectionUrl.searchParams.getAll("sslmode").at(-1)?.toLowerCase();
+  const explicitlyDisablesVerifiedTls = requestedSslModes.some(
+    (mode) => mode === "disable" || mode === "no-verify" || mode === "false" || mode === "0"
+  );
+  const compatibilityModeDisablesVerification =
+    usesLibpqCompatibility && ["prefer", "require", "verify-ca"].includes(requestedSslMode ?? "");
+  if (!isLocalhost && (explicitlyDisablesVerifiedTls || compatibilityModeDisablesVerification)) {
+    throw new Error("Remote PostgreSQL connections must use TLS with certificate verification enabled.");
+  }
+
+  return {
+    connectionString,
+    ssl: isLocalhost ? false : { rejectUnauthorized: true },
+    connectionTimeoutMillis: 2000,
+  };
+}
+
 /**
  * Initializes and provides the database connection.
  * If DATABASE_URL is configured, connects directly to live PostgreSQL (Supabase).
@@ -45,6 +77,10 @@ class PostgresClientQueryAdapter implements DatabaseQueryInterface {
  */
 export async function getDatabaseClient(): Promise<DatabaseQueryInterface> {
   const dbUrl = process.env.DATABASE_URL;
+
+  if (!dbUrl && process.env.NODE_ENV === "production") {
+    throw new Error("CRITICAL INFRASTRUCTURE FAILURE: DATABASE_URL is required in production.");
+  }
 
   // 1. Live PostgreSQL Mode (Supabase / Production / Staging)
   if (dbUrl) {
@@ -58,12 +94,7 @@ export async function getDatabaseClient(): Promise<DatabaseQueryInterface> {
 
     initPromise = (async () => {
       try {
-        const isLocalhost = dbUrl.includes("localhost") || dbUrl.includes("127.0.0.1");
-        liveDbPool = new PgPool({
-          connectionString: dbUrl,
-          ssl: isLocalhost ? false : { rejectUnauthorized: false },
-          connectionTimeoutMillis: 2000,
-        });
+        liveDbPool = new PgPool(buildPostgresPoolConfig(dbUrl));
 
         // Test connection with a harmless query (Section 12 verification)
         const testRes = await liveDbPool.query("SELECT 1 as connected;");
@@ -100,6 +131,7 @@ export async function getDatabaseClient(): Promise<DatabaseQueryInterface> {
 
   initPromise = (async () => {
     if (!globalDb) {
+      const { PGlite } = await import("@electric-sql/pglite");
       globalDb = new PGlite();
     }
 
@@ -164,7 +196,7 @@ export async function executeTransaction<T>(
   }
 
   // PGlite transaction execution
-  const db = (await getDatabaseClient()) as PGlite;
+  const db = (await getDatabaseClient()) as PGliteClient;
 
   if (typeof db.transaction === "function") {
     return (await db.transaction(async (tx) => {
@@ -191,6 +223,7 @@ export async function resetTestDatabase(): Promise<DatabaseQueryInterface> {
     await liveDbPool.end();
     liveDbPool = null;
   }
+  const { PGlite } = await import("@electric-sql/pglite");
   globalDb = new PGlite();
   initialized = false;
   initPromise = null;

@@ -127,11 +127,10 @@ function getBrowserSupabaseClient(): SupabaseClient | null {
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [authState, setAuthState] = useState<AuthState>(() => {
-    return typeof window !== "undefined" && !!getBrowserSupabaseClient()
-      ? "INITIALIZING"
-      : "UNAUTHENTICATED";
-  });
+  // Keep the first render identical on the server and browser. Supabase
+  // session storage is browser-only, so resolve it after hydration in the
+  // effect below instead of reading it from a lazy state initializer.
+  const [authState, setAuthState] = useState<AuthState>("INITIALIZING");
   const [user, setUser] = useState<User | null>(null);
   const [actor, setActor] = useState<AuthMeResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -189,6 +188,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const client = getBrowserSupabaseClient();
     if (!client) {
+      setAuthState("UNAUTHENTICATED");
       return;
     }
 

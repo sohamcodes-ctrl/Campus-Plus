@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { UserRole } from "@/domain/complaint";
 import { getContainer } from "@/infrastructure/container";
 import { executeTransaction } from "@/infrastructure/database/pool";
+import { RegistrationApprovalSchema } from "@/presentation/schemas/registrationSchemas";
 import { AuthorizationError, NotFoundError } from "@/shared/errors/AppError";
 import { createSuccessResponse } from "@/presentation/utils/apiResponse";
 import { handleApiError } from "@/presentation/utils/errorHandler";
@@ -20,17 +21,17 @@ export async function POST(
     }
 
     const { id } = await context.params;
+    const approval = RegistrationApprovalSchema.parse(await request.json());
     const result = await executeTransaction(async (tx) => {
       const requestResult = await tx.query<{
         email: string;
         full_name: string;
         roll_or_prn: string | null;
         department_id: string | null;
-        requested_role: string;
         auth_user_id: string | null;
         status: string;
       }>(
-        `SELECT email, full_name, roll_or_prn, department_id, requested_role, auth_user_id, status
+        `SELECT email, full_name, roll_or_prn, auth_user_id, status
          FROM registration_requests WHERE id = $1 FOR UPDATE;`,
         [id]
       );
@@ -49,12 +50,12 @@ export async function POST(
       );
       await tx.query(
         `INSERT INTO user_roles (user_id, role_id) VALUES ($1, $2) ON CONFLICT DO NOTHING;`,
-        [enrollment.auth_user_id, enrollment.requested_role]
+        [enrollment.auth_user_id, approval.approvedRole]
       );
-      if (enrollment.department_id) {
+      if (approval.approvedDepartmentId) {
         await tx.query(
           `INSERT INTO department_memberships (user_id, department_id) VALUES ($1, $2) ON CONFLICT DO NOTHING;`,
-          [enrollment.auth_user_id, enrollment.department_id]
+          [enrollment.auth_user_id, approval.approvedDepartmentId]
         );
       }
       await tx.query(
@@ -62,7 +63,12 @@ export async function POST(
         [id, actor.userId]
       );
 
-      return { userId: enrollment.auth_user_id, status: "PROVISIONED" };
+      return {
+        userId: enrollment.auth_user_id,
+        role: approval.approvedRole,
+        departmentId: approval.approvedDepartmentId ?? null,
+        status: "PROVISIONED",
+      };
     });
 
     return createSuccessResponse(result);

@@ -38,8 +38,10 @@ export async function GET(
     const isPrivileged = actor.role === UserRole.ROLE_ADMIN || actor.role === UserRole.ROLE_MANAGEMENT;
     const isOwner = attachment.complainant_id === actor.userId;
     const isAssignedHandler = attachment.assigned_handler_id === actor.userId;
-    const isDepartmentMember = actor.departmentId === attachment.department_id && actor.role !== UserRole.ROLE_STUDENT;
-    if (!isPrivileged && !isOwner && !isAssignedHandler && !isDepartmentMember) {
+    const isDepartmentStaff =
+      (actor.role === UserRole.ROLE_HANDLER || actor.role === UserRole.ROLE_DEPT_HEAD) &&
+      actor.departmentId === attachment.department_id;
+    if (!isPrivileged && !isOwner && !isAssignedHandler && !isDepartmentStaff) {
       throw new AuthorizationError("You do not have permission to view this attachment.");
     }
 

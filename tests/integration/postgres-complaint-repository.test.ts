@@ -7,10 +7,13 @@ import {
   ActorContext,
   UserRole,
   ResolutionSummary,
+  StaleVersionConflictError,
 } from "@/domain/complaint";
+import { AuthorizationError } from "@/shared/errors/AppError";
 
 const FIXTURES = {
   studentA: "00000000-0000-0000-0000-000000001001",
+  studentB: "00000000-0000-0000-0000-000000001002",
   itHandler: "00000000-0000-0000-0000-000000001003",
   hodIt: "00000000-0000-0000-0000-000000001005",
   deptIt: "00000000-0000-0000-0000-000000000010",
@@ -111,13 +114,217 @@ describe("Phase 06 PostgresComplaintRepository Transactional Persistence Suite",
     expect(parseInt(finalAuditRes.rows[0].count, 10)).toBe(5); // SUBMIT, REVIEW, ASSIGN, START_PROGRESS, RESOLVE
   });
 
+  it("rejects a stale aggregate update even when the caller omits expectedVersion", async () => {
+    const db = await getDatabaseClient();
+    const repo = new PostgresComplaintRepository(db);
+    const created = Complaint.create({
+      refId: "CP-2026-07991",
+      title: "Concurrent department review update",
+      description: "Two reviewers load the same complaint and attempt the same transition concurrently.",
+      complainantId: FIXTURES.studentA,
+      departmentId: FIXTURES.deptIt,
+      categoryId: FIXTURES.categoryWifi,
+      locationDetails: "Computer Lab 3",
+    });
+    if (created.isFailure) throw new Error("Creation failed");
+    await repo.save(created.value);
+
+    const first = await repo.findById(created.value.id);
+    const stale = await repo.findById(created.value.id);
+    if (!first || !stale) throw new Error("Complaint was not persisted");
+    const reviewer: ActorContext = {
+      userId: FIXTURES.hodIt,
+      role: UserRole.ROLE_DEPT_HEAD,
+      departmentId: FIXTURES.deptIt,
+    };
+    expect(first.review(reviewer).isSuccess).toBe(true);
+    expect(stale.review(reviewer).isSuccess).toBe(true);
+
+    await repo.save(first);
+    await expect(repo.save(stale)).rejects.toBeInstanceOf(StaleVersionConflictError);
+
+    const stored = await repo.findById(created.value.id);
+    expect(stored?.status).toBe("REVIEWED");
+    expect(stored?.version.toNumber()).toBe(2);
+  });
+
+  it("rolls back aggregate, audit, and outbox writes when a related insert fails", async () => {
+    const db = await getDatabaseClient();
+    const repo = new PostgresComplaintRepository(db);
+    const created = Complaint.create({
+      refId: "CP-2026-07992",
+      title: "Failed handler assignment remains uncommitted",
+      description: "An invalid handler foreign key must not leave a partial complaint or journal entry.",
+      complainantId: FIXTURES.studentA,
+      departmentId: FIXTURES.deptIt,
+      categoryId: FIXTURES.categoryWifi,
+      locationDetails: "Computer Lab 3",
+    });
+    if (created.isFailure) throw new Error("Creation failed");
+    const complaint = created.value;
+    const reviewer: ActorContext = {
+      userId: FIXTURES.hodIt,
+      role: UserRole.ROLE_DEPT_HEAD,
+      departmentId: FIXTURES.deptIt,
+    };
+    expect(complaint.review(reviewer).isSuccess).toBe(true);
+    expect(
+      complaint.assignHandler(new UserId("00000000-0000-0000-0000-000000009999"), reviewer, "Invalid handler")
+        .isSuccess
+    ).toBe(true);
+
+    await expect(repo.save(complaint)).rejects.toThrow();
+    const complaintCount = await db.query<{ count: string }>(
+      "SELECT count(*) AS count FROM complaints WHERE id = $1;",
+      [complaint.id.toString()]
+    );
+    const auditCount = await db.query<{ count: string }>(
+      "SELECT count(*) AS count FROM action_history WHERE complaint_id = $1;",
+      [complaint.id.toString()]
+    );
+    const outboxCount = await db.query<{ count: string }>(
+      "SELECT count(*) AS count FROM outbox_events WHERE aggregate_id = $1;",
+      [complaint.id.toString()]
+    );
+    expect(Number(complaintCount.rows[0].count)).toBe(0);
+    expect(Number(auditCount.rows[0].count)).toBe(0);
+    expect(Number(outboxCount.rows[0].count)).toBe(0);
+  });
+
+  it("accepts only the owner's matching unexpired temporary uploads and consumes them atomically", async () => {
+    const db = await getDatabaseClient();
+    const repo = new PostgresComplaintRepository(db);
+    const storageKey = "complaints/temp/owned-evidence.pdf";
+    const attachment = {
+      storageKey,
+      originalFilename: "evidence.pdf",
+      mimeType: "application/pdf",
+      fileSizeBytes: 2048,
+      attachmentType: "INITIAL_EVIDENCE" as const,
+    };
+    const created = Complaint.create({
+      refId: "CP-2026-07993",
+      title: "Complaint with verified evidence upload",
+      description: "The temporary upload must match the submitting account and stored file metadata.",
+      complainantId: FIXTURES.studentA,
+      departmentId: FIXTURES.deptIt,
+      categoryId: FIXTURES.categoryWifi,
+      locationDetails: "Computer Lab 3",
+    });
+    if (created.isFailure) throw new Error("Creation failed");
+
+    await db.query(
+      `INSERT INTO temporary_attachment_uploads
+        (storage_key, uploaded_by_id, original_filename, mime_type, file_size_bytes, expires_at)
+       VALUES ($1, $2, $3, $4, $5, CURRENT_TIMESTAMP + INTERVAL '1 hour');`,
+      [storageKey, FIXTURES.studentA, attachment.originalFilename, attachment.mimeType, attachment.fileSizeBytes]
+    );
+
+    await repo.saveWithAttachments(created.value, [attachment]);
+
+    const storedAttachment = await db.query<{ storage_key: string }>(
+      "SELECT storage_key FROM attachments WHERE complaint_id = $1;",
+      [created.value.id.toString()]
+    );
+    const remainingUpload = await db.query<{ storage_key: string }>(
+      "SELECT storage_key FROM temporary_attachment_uploads WHERE storage_key = $1;",
+      [storageKey]
+    );
+    expect(storedAttachment.rows).toEqual([{ storage_key: storageKey }]);
+    expect(remainingUpload.rows).toHaveLength(0);
+  });
+
+  it("rejects an attachment owned by another user without persisting the complaint", async () => {
+    const db = await getDatabaseClient();
+    const repo = new PostgresComplaintRepository(db);
+    const storageKey = "complaints/temp/other-users-evidence.pdf";
+    const created = Complaint.create({
+      refId: "CP-2026-07994",
+      title: "Complaint with another user's evidence",
+      description: "A temporary upload created by another account cannot be attached to this complaint.",
+      complainantId: FIXTURES.studentA,
+      departmentId: FIXTURES.deptIt,
+      categoryId: FIXTURES.categoryWifi,
+      locationDetails: "Computer Lab 3",
+    });
+    if (created.isFailure) throw new Error("Creation failed");
+    await db.query(
+      `INSERT INTO temporary_attachment_uploads
+        (storage_key, uploaded_by_id, original_filename, mime_type, file_size_bytes, expires_at)
+       VALUES ($1, $2, 'evidence.pdf', 'application/pdf', 2048, CURRENT_TIMESTAMP + INTERVAL '1 hour');`,
+      [storageKey, FIXTURES.studentB]
+    );
+
+    await expect(
+      repo.saveWithAttachments(created.value, [{
+        storageKey,
+        originalFilename: "evidence.pdf",
+        mimeType: "application/pdf",
+        fileSizeBytes: 2048,
+      }])
+    ).rejects.toBeInstanceOf(AuthorizationError);
+
+    const complaintCount = await db.query<{ count: string }>(
+      "SELECT count(*) AS count FROM complaints WHERE id = $1;",
+      [created.value.id.toString()]
+    );
+    expect(Number(complaintCount.rows[0].count)).toBe(0);
+  });
+
+  it("rejects expired uploads and uploads whose submitted metadata was altered", async () => {
+    const db = await getDatabaseClient();
+    const repo = new PostgresComplaintRepository(db);
+    const scenarios = [
+      {
+        refId: "CP-2026-07995",
+        storageKey: "complaints/temp/expired-evidence.pdf",
+        expires: "CURRENT_TIMESTAMP - INTERVAL '1 minute'",
+        filename: "evidence.pdf",
+      },
+      {
+        refId: "CP-2026-07996",
+        storageKey: "complaints/temp/altered-metadata.pdf",
+        expires: "CURRENT_TIMESTAMP + INTERVAL '1 hour'",
+        filename: "evidence.pdf",
+      },
+    ];
+
+    for (const [index, scenario] of scenarios.entries()) {
+      const created = Complaint.create({
+        refId: scenario.refId,
+        title: `Complaint attachment validation case ${index + 1}`,
+        description: "Temporary evidence must be current and match the server-recorded upload metadata.",
+        complainantId: FIXTURES.studentA,
+        departmentId: FIXTURES.deptIt,
+        categoryId: FIXTURES.categoryWifi,
+        locationDetails: "Computer Lab 3",
+      });
+      if (created.isFailure) throw new Error("Creation failed");
+      await db.query(
+        `INSERT INTO temporary_attachment_uploads
+          (storage_key, uploaded_by_id, original_filename, mime_type, file_size_bytes, expires_at)
+         VALUES ($1, $2, 'evidence.pdf', 'application/pdf', 2048, ${scenario.expires});`,
+        [scenario.storageKey, FIXTURES.studentA]
+      );
+
+      await expect(
+        repo.saveWithAttachments(created.value, [{
+          storageKey: scenario.storageKey,
+          originalFilename: index === 0 ? scenario.filename : "client-renamed.pdf",
+          mimeType: "application/pdf",
+          fileSizeBytes: 2048,
+        }])
+      ).rejects.toBeInstanceOf(AuthorizationError);
+    }
+  });
+
   it("rolls back all changes when transaction aborts, preventing partial or orphan writes", async () => {
     const db = await getDatabaseClient();
 
     // Attempt transactional insertion that throws an error mid-transaction
     await expect(
       executeTransaction(async (tx) => {
-        const repo = new PostgresComplaintRepository(tx);
+        const repo = new PostgresComplaintRepository(tx, true);
         const complaintResult = Complaint.create({
           refId: "CP-2026-08888",
           title: "Temporary Aborted Ticket For Rollback Verification",
